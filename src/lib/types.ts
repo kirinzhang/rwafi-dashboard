@@ -9,6 +9,24 @@ export type SeriesPoint = {
   value: number;
 };
 
+export type EquityPlatformMeta = {
+  slug: string;
+  displayName: string;
+  shortName: string;
+  color: string;
+};
+
+export type EquityPlatformPoint = {
+  date: number;
+  total: number;
+  values: Record<string, number>;
+};
+
+export type EquityPlatformHistory = {
+  series: EquityPlatformMeta[];
+  points: EquityPlatformPoint[];
+};
+
 export type IssuerRow = {
   slug: string;
   displayName: string;
@@ -96,6 +114,7 @@ export type DashboardPayload = {
   equityConcentrationZh: string;
   equityConcentrationEn: string;
   equityHistory: SeriesPoint[];
+  equityPlatformHistory: EquityPlatformHistory;
   tweetSnapshot: TweetSnapshot;
   stables: {
     top: StablecoinRow[];

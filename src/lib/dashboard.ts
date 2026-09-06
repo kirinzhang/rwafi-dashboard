@@ -15,6 +15,7 @@ import {
 import { isRwaXyzConfigured } from "./rwa-xyz";
 import {
   changeFromSeries,
+  alignPlatformSeries,
   lastDays,
   mergeIssuerSeries,
   pctChange,
@@ -24,6 +25,7 @@ import type {
   ChainStableRow,
   ChangeSet,
   DashboardPayload,
+  EquityPlatformHistory,
   IssuerRow,
   KpiBlock,
   SeriesPoint,
@@ -119,6 +121,7 @@ function emptyPayload(fetchedAt: string, warnings: string[], error: string | nul
     equityConcentrationZh: "—",
     equityConcentrationEn: "—",
     equityHistory: [],
+    equityPlatformHistory: { series: [], points: [] },
     tweetSnapshot,
     stables: { top: [], byChain: [], globalHistory: [], rhHistory: [] },
     sources: {
@@ -266,18 +269,32 @@ export async function getDashboardData(): Promise<DashboardPayload> {
 
     const equityHhi = herfindahlHirschmanIndex(liveValues);
     const concentration = concentrationTag(equityHhi);
-    const equityHistory = lastDays(
-      mergeIssuerSeries(
-        details.map(({ seed, detail }) => ({
-          slug: seed.slug,
-          points: (detail?.tvl ?? []).map((p) => ({
-            date: p.date,
-            value: p.totalLiquidityUSD,
-          })),
-        })),
-      ),
-      400,
+    const perIssuerHistory = details.map(({ seed, detail }) => ({
+      slug: seed.slug,
+      displayName: seed.displayName,
+      shortName: seed.shortName,
+      color: seed.color,
+      points: (detail?.tvl ?? []).map((p) => ({
+        date: p.date,
+        value: p.totalLiquidityUSD,
+      })),
+    }));
+    const alignedHistory = lastDays(alignPlatformSeries(perIssuerHistory), 800);
+    const equityHistory = lastDays(mergeIssuerSeries(perIssuerHistory), 400);
+    const liveHistorySlugs = new Set(
+      perIssuerHistory.filter((item) => item.points.some((p) => p.value > 0)).map((item) => item.slug),
     );
+    const equityPlatformHistory: EquityPlatformHistory = {
+      series: issuerRows
+        .filter((row) => liveHistorySlugs.has(row.slug))
+        .map((row) => ({
+          slug: row.slug,
+          displayName: row.displayName,
+          shortName: row.shortName,
+          color: row.color,
+        })),
+      points: alignedHistory,
+    };
 
     const globalHistory = chartToSeries(chartsAll);
     const rhHistory = chartToSeries(chartsRh);
@@ -364,6 +381,7 @@ export async function getDashboardData(): Promise<DashboardPayload> {
     payload.equityConcentrationZh = concentration.zh;
     payload.equityConcentrationEn = concentration.en;
     payload.equityHistory = equityHistory;
+    payload.equityPlatformHistory = equityPlatformHistory;
     payload.stables = {
       top,
       byChain,

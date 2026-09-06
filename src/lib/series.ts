@@ -55,7 +55,7 @@ export function downsample(series: SeriesPoint[], maxPoints: number): SeriesPoin
   return out;
 }
 
-export function lastDays(series: SeriesPoint[], days: number): SeriesPoint[] {
+export function lastDays<T extends { date: number }>(series: T[], days: number): T[] {
   if (!series.length) return [];
   const end = series[series.length - 1].date;
   const start = end - days * DAY;
@@ -65,27 +65,43 @@ export function lastDays(series: SeriesPoint[], days: number): SeriesPoint[] {
 export function mergeIssuerSeries(
   seriesList: { slug: string; points: SeriesPoint[] }[],
 ): SeriesPoint[] {
+  return alignPlatformSeries(seriesList).map((row) => ({ date: row.date, value: row.total }));
+}
+
+export function alignPlatformSeries(
+  seriesList: { slug: string; points: SeriesPoint[] }[],
+): { date: number; total: number; values: Record<string, number> }[] {
   const dates = new Set<number>();
   const bySlug = new Map<string, Map<number, number>>();
   for (const item of seriesList) {
+    if (!item.points.length) continue;
     const map = new Map<number, number>();
     for (const point of item.points) {
+      if (!Number.isFinite(point.value)) continue;
       const day = Math.floor(point.date / DAY) * DAY;
       dates.add(day);
       map.set(day, point.value);
     }
-    bySlug.set(item.slug, map);
+    if (map.size) bySlug.set(item.slug, map);
   }
   const ordered = [...dates].sort((a, b) => a - b);
   const lastBySlug = new Map<string, number>();
+  const seen = new Set<string>();
   return ordered.map((date) => {
-    let sum = 0;
+    const values: Record<string, number> = {};
+    let total = 0;
     for (const [slug, map] of bySlug) {
       const next = map.get(date);
-      if (next != null) lastBySlug.set(slug, next);
-      sum += lastBySlug.get(slug) ?? 0;
+      if (next != null) {
+        lastBySlug.set(slug, next);
+        seen.add(slug);
+      }
+      // Only forward-fill after the platform's first real observation.
+      const value = seen.has(slug) ? (lastBySlug.get(slug) ?? 0) : 0;
+      values[slug] = value;
+      total += value;
     }
-    return { date, value: sum };
+    return { date, total, values };
   });
 }
 
