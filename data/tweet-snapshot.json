@@ -1,0 +1,21 @@
+{
+  "asOf": "2026-09-06",
+  "title": "Issuer market share",
+  "subtitle": "Tokenized value grouped by issuer · listed neutrally",
+  "sourceLabel": "推文截图静态对照（非实时）",
+  "sourceNoteZh": "数字来自 2026-09-06 公开图表截图（rwa.xyz 风格发行方市占），仅供对照。本看板不会把这些行当作实时 AUM，也不会用它们填补缺失的免费数据源。",
+  "totalUsd": 2940000000,
+  "hhi": 2675,
+  "concentrationEn": "highly concentrated",
+  "concentrationZh": "高度集中",
+  "rows": [
+    { "name": "Ondo Finance", "usd": 1060000000, "sharePct": 35.9, "color": "#22c55e" },
+    { "name": "Backed Finance", "usd": 843520000, "sharePct": 28.7, "color": "#8b9cff" },
+    { "name": "Binance", "usd": 657040000, "sharePct": 22.3, "color": "#a78bfa" },
+    { "name": "Reality", "usd": 176410000, "sharePct": 6.0, "color": "#2dd4bf" },
+    { "name": "Robinhood", "usd": 149420000, "sharePct": 5.1, "color": "#f97316" },
+    { "name": "Backpack Securities", "usd": 23720000, "sharePct": 0.8, "color": "#fb7185" },
+    { "name": "Dinari Inc.", "usd": 20680000, "sharePct": 0.7, "color": "#1d4ed8" },
+    { "name": "Others", "usd": 13680000, "sharePct": 0.5, "color": "#6b7280" }
+  ]
+}

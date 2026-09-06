@@ -1,0 +1,67 @@
+{
+  "autoDiscover": {
+    "enabled": true,
+    "requiredCategory": "RWA",
+    "nameOrSlugPattern": "xstocks?|dinari|ondo-global-markets|prestocks|openstock|backedfi"
+  },
+  "excludeSlugs": [
+    "ondo-yield-assets",
+    "ondo-v1-(legacy)",
+    "ondo-perps",
+    "vesta-equity",
+    "unblock-equity",
+    "robinhood",
+    "backpack",
+    "robinhood-chain-bridge"
+  ],
+  "issuers": [
+    {
+      "slug": "ondo-global-markets",
+      "displayName": "Ondo Global Markets",
+      "shortName": "Ondo",
+      "color": "#22c55e",
+      "featured": true,
+      "noteZh": "代币化美股 / ETF（不是 OUSG 等国债现金产品）"
+    },
+    {
+      "slug": "xstocks",
+      "displayName": "xStocks (Backed)",
+      "shortName": "xStocks",
+      "color": "#8b9cff",
+      "featured": true,
+      "noteZh": "Backed Finance 的 xStocks。此处用 DefiLlama 协议 TVL；其 RWA 平台页 On-chain AUM 可能更高。"
+    },
+    {
+      "slug": "dinari",
+      "displayName": "Dinari",
+      "shortName": "Dinari",
+      "color": "#1e4ed8",
+      "featured": true,
+      "noteZh": "dShares 代币化股票"
+    },
+    {
+      "slug": "backedfi",
+      "displayName": "BackedFi (bTokens)",
+      "shortName": "BackedFi",
+      "color": "#14b8a6",
+      "featured": false,
+      "noteZh": "Backed 早期 bToken 协议，与 xStocks 分开统计，避免重复估算"
+    },
+    {
+      "slug": "prestocks",
+      "displayName": "PreStocks",
+      "shortName": "PreStocks",
+      "color": "#f472b6",
+      "featured": false,
+      "noteZh": "代币化 Pre-IPO。协议 TVL 可能尚未被 DefiLlama 接入"
+    },
+    {
+      "slug": "openstock",
+      "displayName": "OpenStock",
+      "shortName": "OpenStock",
+      "color": "#f59e0b",
+      "featured": false,
+      "noteZh": "Polynomial 的链上 Pre-IPO 市场（Mantle）"
+    }
+  ]
+}
