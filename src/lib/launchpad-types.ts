@@ -32,6 +32,25 @@ export type LaunchpadToken = {
   url: string;
 };
 
+export type LaunchpadAllocationTotal = {
+  label: string;
+  value: number | null;
+  note?: string;
+};
+
+export type LaunchpadAllocation = {
+  policyZh: string;
+  citations: { name: string; url: string }[];
+  chartKind: "buyback" | "burn" | "dividend" | null;
+  chartTitleZh: string;
+  chartNoteZh: string | null;
+  cumulativeUsd: number | null;
+  cumulativeLabelZh: string | null;
+  missingChartZh: string | null;
+  series: DailyPoint[];
+  extraTotals: LaunchpadAllocationTotal[];
+};
+
 export type LaunchpadCard = {
   id: string;
   displayName: string;
@@ -43,13 +62,43 @@ export type LaunchpadCard = {
   noteZh: string;
   volume: WindowMetric;
   volumeNoteZh: string | null;
+  volume24hUsd: number | null;
+  volume24hNoteZh: string | null;
   grossFees: WindowMetric;
   protocolRevenue: WindowMetric;
   creatorShareApprox: WindowMetric;
   feeMethodologyZh: string | null;
+  allocation: LaunchpadAllocation;
   topTokens: LaunchpadToken[];
   topTokensNoteZh: string;
   sources: { name: string; url: string }[];
+};
+
+export type PeRow = {
+  padId: string;
+  displayName: string;
+  chainId: string;
+  chainName: string;
+  tokenSymbol: string | null;
+  numeratorKind: "circulating_mcap" | "fdv" | null;
+  numeratorUsd: number | null;
+  numeratorMissingZh: string | null;
+  rev7d: number | null;
+  avgDaily7d: number | null;
+  pe7d: number | null;
+  rev30d: number | null;
+  avgDaily30d: number | null;
+  pe30d: number | null;
+  missingZh: string | null;
+  sourceZh: string;
+};
+
+export type PeDefinition = {
+  titleZh: string;
+  formulaZh: string;
+  pe7dZh: string;
+  pe30dZh: string;
+  caveatZh: string;
 };
 
 export type LaunchpadChain = {
@@ -69,5 +118,7 @@ export type LaunchpadsPayload = {
   duneConfigured: boolean;
   duneBoards: { title: string; url: string; noteZh: string }[];
   chains: LaunchpadChain[];
+  peDefinition: PeDefinition;
+  peTable: PeRow[];
   sources: { name: string; url: string; noteZh: string }[];
 };

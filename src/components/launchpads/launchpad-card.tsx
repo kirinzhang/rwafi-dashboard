@@ -15,6 +15,7 @@ import type { LaunchpadCard, RangeKey } from "@/lib/launchpad-types";
 import { RANGE_OPTIONS } from "@/lib/launchpad-types";
 import { barsForFullSeries, barsForWindow, pickMissing, pickRange } from "@/lib/launchpad-windows";
 import { BarChart3, Landmark, Receipt, Trophy, Users } from "lucide-react";
+import { AllocationBlock } from "./allocation-block";
 import { DuneBarChart } from "./dune-bar-chart";
 import { MetricKpi } from "./metric-kpi";
 
@@ -88,7 +89,9 @@ export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: R
             metric={pad.volume}
             range={range}
             color={pad.color}
-            hint={pad.volumeNoteZh}
+            hint={pad.volumeNoteZh ?? pad.volume24hNoteZh}
+            snapshotUsd={pad.volume24hUsd}
+            snapshotLabel="近 24h 快照"
           />
           <MetricKpi
             icon={Receipt}
@@ -152,6 +155,8 @@ export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: R
               : []
           }
         />
+
+        <AllocationBlock allocation={pad.allocation} range={range} color={pad.color} />
 
         <div className="rounded-xl border border-white/8 p-3">
           <div className="mb-2 flex items-center gap-2">

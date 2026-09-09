@@ -78,10 +78,24 @@ Add an issuer by appending a slug + display name in `data/issuers.json`.
 **Launchpads** (`/launchpads` · `/api/launchpads` · [`data/launchpads.json`](data/launchpads.json))
 
 - Fees: `https://api.llama.fi/summary/fees/{slug}?dataType=dailyFees` (gross) and `?dataType=dailyRevenue` (protocol keep)
-- Volume: `https://api.llama.fi/summary/dexs/{slug}`
+- Volume (pads with a Llama DEX adapter): `https://api.llama.fi/summary/dexs/{slug}`
 - 30/60/90-day totals **and daily bar charts**: sum / plot `totalDataChart`. Missing calendar days in the window are 0, not interpolated. If the daily series is shorter than the window, the **total** is **—**. 30d may fall back to DefiLlama `total30d` when the chart is missing.
 - **全部**: sum the full available daily series. Bars plot every calendar day in that span; if there are more than 160 days, bars are **weekly sums** (documented on the chart).
-- stonk.fun: fees chart exists (`summary/fees/stonkfun`); **no** DEX volume adapter (`summary/dexs/stonkfun` 400). GeckoTerminal has no stonkfun Solana DEX; DexScreener hits are unrelated pools. Volume stays — with that reason on the card.
+- **stonk.fun volume**: Llama `summary/dexs/stonkfun` is 400 (no adapter). Official public API (no key), docs [stonkfun.xyz/developers](https://www.stonkfun.xyz/developers):
+  - `GET https://www.stonkfun.xyz/api/public/v1/stats` → `data.tokens.totalVolume24hUsd` (**platform 24h volume snapshot**, shown as 24h KPI)
+  - `GET /api/public/v1/tokens?sort=volume` has per-token `market.volume24hUsd` only — not used to invent a daily platform series (25k+ tokens; `/stats` is the official aggregate)
+  - `GET /api/public/v1/revenue/history` is **treasury fees / buyback-and-burn spend**, **not** trading volume — never proxied as volume
+  - No `/volume` or `/volume/history` endpoint exists. 30/60/90/全部 volume stay **—** with that reason.
+  - Bitquery StonkFun docs are per-pool `DEXTradeByTokens` and need OAuth outside the IDE. Optional `BITQUERY_API_KEY` is unused while first-party `/stats` works.
+- **Trailing PE table** (cross-chain, above the chain tabs):
+  - `PE = circulating mcap ÷ (period-average daily protocol revenue × 365)`
+  - `PE 7d = mcap / (Rev7d / 7 × 365)` · `PE 30d = mcap / (Rev30d / 30 × 365)`
+  - Numerator: CoinGecko `simple/price?include_market_cap=true` circulating mcap (`pump-fun`, `pons`, `four`, `stonk-3`). If circulating is missing, FDV (labeled). Long.xyz / Flap.sh have no verified platform-token mcap → **—**.
+  - Denominator: DefiLlama `summary/fees/{slug}?dataType=dailyRevenue` `total7d` / `total30d` (Pons = `pons-v1` + `pons-v2`). Missing mcap or revenue → **—** + reason.
+- **Revenue allocation**: policy text per pad from Llama methodology + StonkFun docs. Executed buyback/burn **charts only when a verifiable series exists**:
+  - pump.fun: Llama `dailyHoldersRevenue` (PUMP buyback; Llama says this aggregates all pump products)
+  - stonk.fun: first-party `/revenue/history` `dailyHoldersRevenue` plus `/revenue` `totalBuybackUsd` / `burns.totalValueUsdAtBurn`
+  - Pons / four.meme / Flap / Long.xyz: policy only; chart **—** (Pons V1 holders series does not match “~80% of revenue”, V2 has no holders adapter)
 - Top-5 sample: GeckoTerminal `https://api.geckoterminal.com/api/v2/networks/{network}/dexes/{dex}/pools`
 - Dune boards are cited as **reference links only**. Live numbers do not come from Dune unless you later wire `DUNE_API_KEY`.
 
@@ -90,7 +104,8 @@ Slugs used: `pons-v2`, `pons-v1`, `stonkfun`, `pump.fun`, `four.meme`, `flap-sh`
 Optional env:
 
 ```bash
-DUNE_API_KEY=   # unused by the live fetch path; dashboard links still render
+DUNE_API_KEY=       # unused by the live fetch path; dashboard links still render
+BITQUERY_API_KEY=   # unused; StonkFun first-party /stats covers 24h volume
 ```
 
 ## Methodology caveats / 口径

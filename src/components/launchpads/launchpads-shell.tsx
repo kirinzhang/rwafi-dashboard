@@ -8,6 +8,7 @@ import type { LaunchpadsPayload, RangeKey } from "@/lib/launchpad-types";
 import { RANGE_OPTIONS } from "@/lib/launchpad-types";
 import { useCallback, useEffect, useState } from "react";
 import { LaunchpadCardView } from "./launchpad-card";
+import { PeTable } from "./pe-table";
 
 const REFRESH_MS = 5 * 60 * 1000;
 
@@ -44,7 +45,7 @@ export function LaunchpadsShell({ initialData }: { initialData: LaunchpadsPayloa
       <Tabs defaultValue={defaultChain} className="gap-6">
         <SiteHeader
           title="发射台看板"
-          subtitle="RH：Pons、Long.xyz · Solana：stonk.fun、pump.fun · BSC：four.meme、Flap.sh。日频柱按 30 / 60 / 90 天或全部历史。对照用，不是投资建议。"
+          subtitle="RH：Pons、Long.xyz · Solana：stonk.fun、pump.fun · BSC：four.meme、Flap.sh。日频柱按 30 / 60 / 90 天或全部历史。顶部为跨链 PE 对照。对照用，不是投资建议。"
           fetchedAt={data.fetchedAt}
           refreshing={refreshing}
           onRefresh={() => void refresh()}
@@ -82,6 +83,8 @@ export function LaunchpadsShell({ initialData }: { initialData: LaunchpadsPayloa
           </div>
         ) : null}
 
+        <PeTable definition={data.peDefinition} rows={data.peTable} />
+
         {data.chains.map((chain) => (
           <TabsContent key={chain.id} value={chain.id} className="mt-0 space-y-3">
             <div className="flex items-center gap-2">
@@ -111,9 +114,13 @@ export function LaunchpadsShell({ initialData }: { initialData: LaunchpadsPayloa
       <footer className="space-y-3 border-t border-white/8 pt-6 pb-4 text-sm text-muted-foreground">
         <h2 className="text-foreground">方法与数据源</h2>
         <p>
-          实时路径优先 DefiLlama 免费 fees / dexs 接口（无需 API Key）。30 / 60 / 90
+          实时路径优先 DefiLlama 免费 fees / dexs 接口与 StonkFun 官方公开 API（无需 API Key）。30 / 60 / 90
           天指标由 <code className="text-foreground">totalDataChart</code> 与链拆分日频加总；窗口不足时显示
-          — 并说明原因，不会外推。「全部」加总完整可用日频；柱太多时按周加总并在图上说明。GeckoTerminal 只用于 Top5 池样本。Dune 看板列为对照链接
+          — 并说明原因，不会外推。「全部」加总完整可用日频；柱太多时按周加总并在图上说明。
+          stonk.fun 近 24h 成交额来自 <code className="text-foreground">GET /api/public/v1/stats</code> 的{" "}
+          <code className="text-foreground">tokens.totalVolume24hUsd</code>；更长窗口仍为 —，因为官方没有日频成交量历史，
+          <code className="text-foreground">/revenue/history</code> 是手续费与买回，不能当成交量。
+          PE = 流通市值 ÷（期间日均协议收入 × 365）。GeckoTerminal 只用于 Top5 池样本与 CoinGecko 市值回退。Dune 看板列为对照链接
           {data.duneConfigured ? "（已配置 DUNE_API_KEY，但本页尚未执行付费查询）" : "（未配置 DUNE_API_KEY）"}
           ，不会把看板截图数字当成实时值。
         </p>

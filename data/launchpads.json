@@ -58,6 +58,12 @@
         { "network": "robinhood", "dex": "pons-v2-dex" },
         { "network": "robinhood", "dex": "pons-dot-family" }
       ],
+      "equityToken": {
+        "symbol": "PONS",
+        "geckoCoinId": "pons",
+        "network": "robinhood",
+        "address": "0x39dbed3a2bd333467115de45665cc57f813c4571"
+      },
       "noteZh": "毛手续费 = DefiLlama dailyFees（V1+V2 加总）。协议收入 = dailyRevenue（V1+V2）。创作者/供给侧 ≈ 毛费 − 协议收入。成交量目前只有 Pons V2 的 DEX 适配器。"
     },
     {
@@ -72,6 +78,7 @@
       "volumeSlugs": [],
       "volumeChainKey": "robinhood",
       "geckoDexes": [],
+      "equityToken": null,
       "noteZh": "Robinhood Chain 股票代币配对发射台（Uniswap v4 / Airlock）。检索 DefiLlama protocols / fees / dexs 均无 long / long-xyz / longxyz / long.xyz 适配器；GeckoTerminal 无独立 Long DEX id（池多在 Uniswap v4 / Bankr 等通用 DEX 上）。成交量、费用、Top5 因此为 —，不编造。"
     },
     {
@@ -86,7 +93,13 @@
       "volumeSlugs": [],
       "volumeChainKey": "solana",
       "geckoDexes": [],
-      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）— Solana 发射台，不是 RH 的 StonkBrokers / sTONks。毛手续费 = Raydium CLMM Burn & Earn 平台分成（有日频）。成交量：Llama dexs、GeckoTerminal DEX、DexScreener 均无可用发射台序列，故为 —，不把费用当成交量。"
+      "equityToken": {
+        "symbol": "STONK",
+        "geckoCoinId": "stonk-3",
+        "network": "solana",
+        "address": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx"
+      },
+      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）— Solana 发射台，不是 RH 的 StonkBrokers / sTONks。毛手续费 = Raydium CLMM / LaunchLab 平台分成（Llama 日频）。24h 平台成交额来自 StonkFun GET /api/public/v1/stats（tokens.totalVolume24hUsd）。官方 API 无日频成交量历史，30/60/90/全部成交量为 —；不把 /revenue/history 当成交量。"
     },
     {
       "id": "pump-fun",
@@ -103,6 +116,12 @@
         { "network": "solana", "dex": "pumpswap" },
         { "network": "solana", "dex": "pump-fun" }
       ],
+      "equityToken": {
+        "symbol": "PUMP",
+        "geckoCoinId": "pump-fun",
+        "network": "solana",
+        "address": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn"
+      },
       "noteZh": "成交量/费用仅为 pump.fun 发射台（bonding curve），不含 PumpSwap 现货。Top5 混合 GeckoTerminal 的 pump-fun 曲线池 + PumpSwap 毕业盘，按 FDV 排序，是样本而非全历史市值榜。"
     },
     {
@@ -117,6 +136,12 @@
       "volumeSlugs": ["four.meme"],
       "volumeChainKey": "bsc",
       "geckoDexes": [{ "network": "bsc", "dex": "four-meme" }],
+      "equityToken": {
+        "symbol": "FORM",
+        "geckoCoinId": "four",
+        "network": "bsc",
+        "address": "0x5b73A93b4E5E4F1fD27d8B3F8C97d69908b5e284"
+      },
       "noteZh": "毛手续费 = 发射/交易用户费；协议收入 = four.meme 留存。Top5 为 Four.meme DEX 当前池样本（多为曲线盘，毕业后在 Pancake 的大市值代币不一定出现）。"
     },
     {
@@ -131,7 +156,8 @@
       "volumeSlugs": ["flap-sh"],
       "volumeChainKey": "bsc",
       "geckoDexes": [],
-      "noteZh": "多链发射台。日频图尽量用 BSC 链拆分。GeckoTerminal 无独立 Flap DEX，Top5 暂缺。"
+      "equityToken": null,
+      "noteZh": "多链发射台。日频图尽量用 BSC 链拆分。GeckoTerminal 无独立 Flap DEX，Top5 暂缺。未找到可验证的平台代币流通市值，PE 为 —。"
     }
   ]
 }

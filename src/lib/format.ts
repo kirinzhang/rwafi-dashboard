@@ -32,6 +32,15 @@ export function formatShare(value: number | null | undefined): string {
   return `${value.toFixed(1)}%`;
 }
 
+/** Trailing PE multiple, e.g. 12.4× */
+export function formatMultiple(value: number | null | undefined, digits = 1): string {
+  if (value == null || !Number.isFinite(value) || value <= 0) return "—";
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}k×`;
+  if (value >= 100) return `${value.toFixed(0)}×`;
+  if (value < 1) return `${value.toFixed(2)}×`;
+  return `${value.toFixed(digits)}×`;
+}
+
 export function formatShanghai(input: string | number | Date): string {
   const date = input instanceof Date ? input : new Date(input);
   if (Number.isNaN(date.getTime())) return "—";
