@@ -58,35 +58,35 @@
         { "network": "robinhood", "dex": "pons-v2-dex" },
         { "network": "robinhood", "dex": "pons-dot-family" }
       ],
-      "noteZh": "毛手续费 = DefiLlama dailyFees（V1+V2 加总）。协议收入 = dailyRevenue（V1+V2）。创作者/供给侧 ≈ 毛费 − 协议收入（V2 methodology：SupplySideRevenue 含创作者分成、可选税与回购）。成交量目前只有 Pons V2 的 DEX 适配器；V1 成交量显示为不可用。"
+      "noteZh": "毛手续费 = DefiLlama dailyFees（V1+V2 加总）。协议收入 = dailyRevenue（V1+V2）。创作者/供给侧 ≈ 毛费 − 协议收入。成交量目前只有 Pons V2 的 DEX 适配器。"
     },
     {
-      "id": "stonkbrokers",
-      "displayName": "StonkBrokers",
-      "chainId": "robinhood",
-      "primary": true,
-      "color": "#fbbf24",
-      "url": "https://www.stonkbrokers.cash",
-      "defillamaUrl": "https://defillama.com/protocol/stonkbrokers",
-      "feeSlugs": ["stonkbrokers"],
-      "volumeSlugs": ["stonkbrokers"],
-      "volumeChainKey": "robinhood",
-      "geckoDexes": [],
-      "noteZh": "Stonk / Stonklauncher / StonkBrokers 套件。GeckoTerminal 没有独立 Stonk DEX id，Top5 市值暂缺。费用含 NFT AMM、Safe Launch 税与曲线费，口径比单纯 meme 发射台更宽。"
-    },
-    {
-      "id": "noxa-fun",
-      "displayName": "NOXA Fun",
+      "id": "long-xyz",
+      "displayName": "Long.xyz",
       "chainId": "robinhood",
       "primary": false,
-      "color": "#a78bfa",
-      "url": "https://fun.noxa.eth.limo/",
-      "defillamaUrl": "https://defillama.com/protocol/noxa-fun",
-      "feeSlugs": ["noxa-fun"],
+      "color": "#38bdf8",
+      "url": "https://long.xyz",
+      "defillamaUrl": "",
+      "feeSlugs": [],
       "volumeSlugs": [],
       "volumeChainKey": "robinhood",
       "geckoDexes": [],
-      "noteZh": "24h 费用几乎全部在 Robinhood Chain。DefiLlama 写明 Revenue 适配器暂未启用，手续费归 token 创作者，故协议收入为 0。无独立 DEX volume 适配器。"
+      "noteZh": "Robinhood Chain 股票代币配对发射台（Uniswap v4 / Airlock）。检索 DefiLlama protocols / fees / dexs 均无 long / long-xyz / longxyz / long.xyz 适配器；GeckoTerminal 无独立 Long DEX id（池多在 Uniswap v4 / Bankr 等通用 DEX 上）。成交量、费用、Top5 因此为 —，不编造。"
+    },
+    {
+      "id": "stonkfun",
+      "displayName": "stonk.fun",
+      "chainId": "solana",
+      "primary": false,
+      "color": "#e879f9",
+      "url": "https://www.stonkfun.xyz/",
+      "defillamaUrl": "https://defillama.com/protocol/stonkfun",
+      "feeSlugs": ["stonkfun"],
+      "volumeSlugs": [],
+      "volumeChainKey": "solana",
+      "geckoDexes": [],
+      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）— Solana 发射台，不是 RH 的 StonkBrokers。毛手续费与协议收入口径相同（Raydium CLMM Burn & Earn 平台份额）。无 DEX volume 适配器；无独立 GeckoTerminal DEX，Top5 暂缺。"
     },
     {
       "id": "pump-fun",
@@ -104,34 +104,6 @@
         { "network": "solana", "dex": "pump-fun" }
       ],
       "noteZh": "成交量/费用仅为 pump.fun 发射台（bonding curve），不含 PumpSwap 现货。Top5 混合 GeckoTerminal 的 pump-fun 曲线池 + PumpSwap 毕业盘，按 FDV 排序，是样本而非全历史市值榜。"
-    },
-    {
-      "id": "letsbonk",
-      "displayName": "BONK.fun / LetsBonk",
-      "chainId": "solana",
-      "primary": false,
-      "color": "#f59e0b",
-      "url": "https://letsbonk.fun",
-      "defillamaUrl": "https://defillama.com/protocol/bonk.fun-launchpad",
-      "feeSlugs": ["bonk.fun-launchpad"],
-      "volumeSlugs": [],
-      "volumeChainKey": "solana",
-      "geckoDexes": [],
-      "noteZh": "DefiLlama slug bonk.fun-launchpad（LetsBonk 模块）。有费用/收入，暂无 DEX volume 适配器。Top5 无独立 Gecko DEX。"
-    },
-    {
-      "id": "stonkfun",
-      "displayName": "stonk.fun",
-      "chainId": "solana",
-      "primary": false,
-      "color": "#e879f9",
-      "url": "https://www.stonkfun.xyz/",
-      "defillamaUrl": "https://defillama.com/protocol/stonkfun",
-      "feeSlugs": ["stonkfun"],
-      "volumeSlugs": [],
-      "volumeChainKey": "solana",
-      "geckoDexes": [],
-      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）。毛手续费与协议收入口径相同：Raydium CLMM Burn & Earn 分给平台的份额，全部记为协议收入。无 DEX volume 适配器；毕业盘在 Raydium，GeckoTerminal 无独立 stonk.fun DEX，Top5 暂缺。"
     },
     {
       "id": "four-meme",
@@ -159,7 +131,7 @@
       "volumeSlugs": ["flap-sh"],
       "volumeChainKey": "bsc",
       "geckoDexes": [],
-      "noteZh": "多链发射台。24h 成交量/费用尽量用 BSC 拆分；7d/30d 为协议合计（含 X Layer / Monad / RH）。GeckoTerminal 无独立 Flap DEX，Top5 暂缺。"
+      "noteZh": "多链发射台。日频图尽量用 BSC 链拆分。GeckoTerminal 无独立 Flap DEX，Top5 暂缺。"
     }
   ]
 }

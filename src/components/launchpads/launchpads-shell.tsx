@@ -44,7 +44,7 @@ export function LaunchpadsShell({ initialData }: { initialData: LaunchpadsPayloa
       <Tabs defaultValue={defaultChain} className="gap-6">
         <SiteHeader
           title="发射台看板"
-          subtitle="Robinhood Chain / Solana / BSC 上主要 meme 与股权 meme 发射台的成交量、毛手续费与协议收入。对照用，不是投资建议。"
+          subtitle="RH：Pons、Long.xyz · Solana：stonk.fun、pump.fun · BSC：four.meme、Flap.sh。日频柱状图按 30/60/90 天窗口加总。对照用，不是投资建议。"
           fetchedAt={data.fetchedAt}
           refreshing={refreshing}
           onRefresh={() => void refresh()}

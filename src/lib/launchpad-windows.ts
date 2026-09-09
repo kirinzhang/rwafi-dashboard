@@ -101,3 +101,18 @@ export function pickRange(metric: WindowMetric, range: RangeKey): number | null 
 export function pickMissing(metric: WindowMetric, range: RangeKey): string | undefined {
   return metric.missing[range];
 }
+
+/** Daily bars for a trailing window. Missing days are 0 (not interpolated). */
+export function barsForWindow(series: DailyPoint[], days: number, endT?: number): DailyPoint[] {
+  if (!series.length && endT == null) return [];
+  const sorted = [...series].sort((a, b) => a.t - b.t);
+  const end = endT ?? sorted[sorted.length - 1]?.t;
+  if (end == null) return [];
+  const byT = new Map(sorted.map((p) => [p.t, p.v]));
+  const out: DailyPoint[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const t = end - i * DAY;
+    out.push({ t, v: byT.get(t) ?? 0 });
+  }
+  return out;
+}

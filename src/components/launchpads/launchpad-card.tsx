@@ -13,11 +13,22 @@ import {
 import { formatUsd } from "@/lib/format";
 import type { LaunchpadCard, RangeKey } from "@/lib/launchpad-types";
 import { RANGE_OPTIONS } from "@/lib/launchpad-types";
+import { barsForWindow, pickMissing, pickRange } from "@/lib/launchpad-windows";
 import { BarChart3, Landmark, Receipt, Trophy, Users } from "lucide-react";
-import { MetricTile } from "./metric-tile";
+import { DuneBarChart } from "./dune-bar-chart";
+import { MetricKpi } from "./metric-kpi";
 
 export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: RangeKey }) {
   const days = RANGE_OPTIONS.find((item) => item.key === range)?.days ?? 30;
+  const volumeBars = pad.volume.series.length ? barsForWindow(pad.volume.series, days) : [];
+  const feeEnd = Math.max(pad.grossFees.series.at(-1)?.t ?? 0, pad.protocolRevenue.series.at(-1)?.t ?? 0) || undefined;
+  const feeBars =
+    pad.grossFees.series.length && feeEnd ? barsForWindow(pad.grossFees.series, days, feeEnd) : [];
+  const revenueBars =
+    pad.protocolRevenue.series.length && feeEnd
+      ? barsForWindow(pad.protocolRevenue.series, days, feeEnd)
+      : [];
+
   return (
     <Card className="border-white/5 bg-card/80">
       <CardHeader className="border-b border-white/5">
@@ -42,60 +53,89 @@ export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: R
             <a href={pad.url} target="_blank" rel="noreferrer" className="text-sky-300 hover:underline">
               官网
             </a>
-            <a
-              href={pad.defillamaUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-muted-foreground hover:underline"
-            >
-              DefiLlama
-            </a>
+            {pad.defillamaUrl ? (
+              <a
+                href={pad.defillamaUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:underline"
+              >
+                DefiLlama
+              </a>
+            ) : null}
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricTile
+          <MetricKpi
             icon={BarChart3}
             label="成交量"
             metric={pad.volume}
             range={range}
-            days={days}
             color={pad.color}
             hint={pad.volumeNoteZh}
-            gradientId={`${pad.id}-vol`}
           />
-          <MetricTile
+          <MetricKpi
             icon={Receipt}
             label="毛手续费"
             metric={pad.grossFees}
             range={range}
-            days={days}
             color="#fb7185"
             hint={pad.feeMethodologyZh}
-            gradientId={`${pad.id}-fees`}
           />
-          <MetricTile
+          <MetricKpi
             icon={Landmark}
             label="协议收入"
             metric={pad.protocolRevenue}
             range={range}
-            days={days}
             color="#34d399"
             hint="DefiLlama dailyRevenue（协议留存）。"
-            gradientId={`${pad.id}-rev`}
           />
-          <MetricTile
+          <MetricKpi
             icon={Users}
             label="创作者分成（近似）"
             metric={pad.creatorShareApprox}
             range={range}
-            days={days}
             color="#fbbf24"
             hint="毛手续费 − 协议收入。未拆分时为 0 或 —。"
-            gradientId={`${pad.id}-creator`}
           />
         </div>
+
+        <DuneBarChart
+          title="日成交量"
+          total={pickRange(pad.volume, range)}
+          missing={pickMissing(pad.volume, range)}
+          days={days}
+          series={
+            volumeBars.length
+              ? [{ key: "volume", label: "成交量", color: pad.color, points: volumeBars }]
+              : []
+          }
+        />
+        <DuneBarChart
+          title="日毛手续费 / 协议收入"
+          total={pickRange(pad.grossFees, range)}
+          missing={pickMissing(pad.grossFees, range)}
+          days={days}
+          series={
+            feeBars.length
+              ? [
+                  { key: "fees", label: "毛手续费", color: "#fb7185", points: feeBars },
+                  ...(pad.protocolRevenue.series.length
+                    ? [
+                        {
+                          key: "revenue",
+                          label: "协议收入",
+                          color: "#34d399",
+                          points: revenueBars,
+                        },
+                      ]
+                    : []),
+                ]
+              : []
+          }
+        />
 
         <div className="rounded-xl border border-white/8 p-3">
           <div className="mb-2 flex items-center gap-2">

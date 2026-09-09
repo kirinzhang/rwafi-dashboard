@@ -4,26 +4,21 @@ import { formatUsd } from "@/lib/format";
 import type { RangeKey, WindowMetric } from "@/lib/launchpad-types";
 import { pickMissing, pickRange } from "@/lib/launchpad-windows";
 import type { LucideIcon } from "lucide-react";
-import { MetricSparkline } from "./metric-sparkline";
 
-export function MetricTile({
+export function MetricKpi({
   icon: Icon,
   label,
   metric,
   range,
-  days,
   color,
   hint,
-  gradientId,
 }: {
   icon: LucideIcon;
   label: string;
   metric: WindowMetric;
   range: RangeKey;
-  days: number;
   color: string;
   hint?: string | null;
-  gradientId: string;
 }) {
   const value = pickRange(metric, range);
   const missing = pickMissing(metric, range);
@@ -43,19 +38,10 @@ export function MetricTile({
           </div>
         </div>
       </div>
-      <div className="mt-2">
-        {metric.series.length >= 2 ? (
-          <MetricSparkline series={metric.series} days={days} color={color} gradientId={gradientId} />
-        ) : (
-          <div className="flex h-14 items-center text-[11px] text-muted-foreground/70">
-            {missing ? "无可用日频图" : "无窗口内日频点"}
-          </div>
-        )}
-      </div>
       {missing ? (
-        <p className="mt-1 text-[11px] leading-relaxed text-amber-200/80">— {missing}</p>
+        <p className="mt-2 text-[11px] leading-relaxed text-amber-200/80">— {missing}</p>
       ) : hint ? (
-        <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">{hint}</p>
+        <p className="mt-2 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">{hint}</p>
       ) : null}
     </div>
   );

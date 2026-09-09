@@ -215,13 +215,13 @@ function buildCard(
     pad.feeSlugs,
     feeSummaries,
     pad.volumeChainKey,
-    pad.feeSlugs.length ? "DefiLlama fees 日频图不可用。" : "未配置 fees slug。",
+    pad.feeSlugs.length ? "DefiLlama fees 日频图不可用。" : "DefiLlama 未收录该发射台的 fees 适配器。",
   );
   const protocolRevenue = metricFromSlugs(
     pad.feeSlugs,
     revenueSummaries,
     pad.volumeChainKey,
-    pad.feeSlugs.length ? "DefiLlama revenue 日频图不可用。" : "未配置 fees slug。",
+    pad.feeSlugs.length ? "DefiLlama revenue 日频图不可用。" : "DefiLlama 未收录该发射台的 revenue 适配器。",
   );
 
   let volumeNote: string | null = null;
@@ -279,8 +279,10 @@ function buildCard(
       ? "GeckoTerminal 该 DEX 第一页池按 FDV/市值排序的样本，不是全历史市值榜；市值字段常为空时用 FDV。"
       : "无公开、可自动对齐的发射台代币市值榜（GeckoTerminal 无独立 DEX id）。",
     sources: [
-      { name: "DefiLlama fees", url: `https://api.llama.fi/summary/fees/${pad.feeSlugs[0]}` },
-      { name: "DefiLlama protocol", url: pad.defillamaUrl },
+      ...(pad.feeSlugs[0]
+        ? [{ name: "DefiLlama fees", url: `https://api.llama.fi/summary/fees/${pad.feeSlugs[0]}` }]
+        : []),
+      ...(pad.defillamaUrl ? [{ name: "DefiLlama protocol", url: pad.defillamaUrl }] : []),
       ...(pad.volumeSlugs.length
         ? [{ name: "DefiLlama DEX volume", url: `https://defillama.com/protocol/${pad.volumeSlugs[0]}` }]
         : []),
