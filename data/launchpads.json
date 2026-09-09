@@ -120,18 +120,18 @@
       "noteZh": "DefiLlama slug bonk.fun-launchpad（LetsBonk 模块）。有费用/收入，暂无 DEX volume 适配器。Top5 无独立 Gecko DEX。"
     },
     {
-      "id": "bags",
-      "displayName": "Bags",
+      "id": "stonkfun",
+      "displayName": "stonk.fun",
       "chainId": "solana",
       "primary": false,
-      "color": "#38bdf8",
-      "url": "https://bags.fm/",
-      "defillamaUrl": "https://defillama.com/protocol/bags",
-      "feeSlugs": ["bags"],
+      "color": "#e879f9",
+      "url": "https://www.stonkfun.xyz/",
+      "defillamaUrl": "https://defillama.com/protocol/stonkfun",
+      "feeSlugs": ["stonkfun"],
       "volumeSlugs": [],
       "volumeChainKey": "solana",
-      "geckoDexes": [{ "network": "solana", "dex": "bags-fm" }],
-      "noteZh": "费用含 Solana + Robinhood Chain。展示协议合计；24h 链拆分见卡片脚注。无 DEX volume 适配器。"
+      "geckoDexes": [],
+      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）。毛手续费与协议收入口径相同：Raydium CLMM Burn & Earn 分给平台的份额，全部记为协议收入。无 DEX volume 适配器；毕业盘在 Raydium，GeckoTerminal 无独立 stonk.fun DEX，Top5 暂缺。"
     },
     {
       "id": "four-meme",

@@ -1,11 +1,18 @@
 import seed from "../../data/launchpads.json";
 import { llamaJson, settled } from "./llama";
 import type {
+  DailyPoint,
   LaunchpadCard,
   LaunchpadToken,
   LaunchpadsPayload,
-  PeriodUsd,
+  WindowMetric,
 } from "./launchpad-types";
+import {
+  buildWindowMetric,
+  emptyMetric,
+  mergeDaily,
+  residualSeries,
+} from "./launchpad-windows";
 
 const CACHE = 600;
 
@@ -18,6 +25,8 @@ type LlamaSummary = {
   chains?: string[];
   methodology?: Record<string, string> | string | null;
   methodologyURL?: string | null;
+  totalDataChart?: [number, number][] | null;
+  totalDataChartBreakdown?: [number, Record<string, Record<string, number>>][] | null;
   chainBreakdown?: Record<
     string,
     { total24h?: number | null; total7d?: number | null; total30d?: number | null }
@@ -49,37 +58,17 @@ type GeckoToken = {
 
 type LaunchpadSeed = (typeof seed.launchpads)[number];
 
-function emptyPeriod(): PeriodUsd {
-  return { h24: null, d7: null, d30: null };
-}
+const CHAIN_LABEL: Record<string, string> = {
+  robinhood: "Robinhood Chain",
+  solana: "Solana",
+  bsc: "BSC",
+};
 
 function num(value: unknown): number | null {
   if (value == null) return null;
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : null;
 }
-
-function addPeriod(a: PeriodUsd, b: PeriodUsd): PeriodUsd {
-  const sum = (x: number | null, y: number | null): number | null => {
-    if (x == null && y == null) return null;
-    return (x ?? 0) + (y ?? 0);
-  };
-  return { h24: sum(a.h24, b.h24), d7: sum(a.d7, b.d7), d30: sum(a.d30, b.d30) };
-}
-
-function residual(fees: PeriodUsd, revenue: PeriodUsd): PeriodUsd {
-  const part = (f: number | null, r: number | null): number | null => {
-    if (f == null) return null;
-    return Math.max(0, f - (r ?? 0));
-  };
-  return { h24: part(fees.h24, revenue.h24), d7: part(fees.d7, revenue.d7), d30: part(fees.d30, revenue.d30) };
-}
-
-const CHAIN_LABEL: Record<string, string> = {
-  robinhood: "Robinhood Chain",
-  solana: "Solana",
-  bsc: "BSC",
-};
 
 function methodologyText(raw: LlamaSummary["methodology"] | undefined): string | null {
   if (!raw) return null;
@@ -95,14 +84,52 @@ function methodologyText(raw: LlamaSummary["methodology"] | undefined): string |
   return parts.length ? parts.join(" ") : null;
 }
 
-function periodFromSummary(row: LlamaSummary | null | undefined, chainKey?: string): PeriodUsd {
-  if (!row) return emptyPeriod();
+function native30(row: LlamaSummary | null | undefined, chainKey?: string): number | null {
+  if (!row) return null;
   const label = chainKey ? CHAIN_LABEL[chainKey] : undefined;
   const slice = label ? row.chainBreakdown?.[label] : undefined;
-  if (slice) {
-    return { h24: num(slice.total24h), d7: num(slice.total7d), d30: num(slice.total30d) };
+  if (slice) return num(slice.total30d);
+  return num(row.total30d);
+}
+
+function dailyFromSummary(row: LlamaSummary | null | undefined, chainKey?: string): DailyPoint[] {
+  if (!row) return [];
+  const label = chainKey ? CHAIN_LABEL[chainKey] : undefined;
+  const breakdown = row.totalDataChartBreakdown;
+  if (label && Array.isArray(breakdown) && breakdown.length) {
+    const hasChain = breakdown.some(([, chains]) => chains && label in chains);
+    if (hasChain) {
+      return breakdown.map(([t, chains]) => {
+        const inner = chains?.[label];
+        const v = inner
+          ? Object.values(inner).reduce((sum, item) => sum + (typeof item === "number" ? item : 0), 0)
+          : 0;
+        return { t, v };
+      });
+    }
   }
-  return { h24: num(row.total24h), d7: num(row.total7d), d30: num(row.total30d) };
+  const chart = row.totalDataChart;
+  if (!Array.isArray(chart)) return [];
+  return chart
+    .filter((row) => Array.isArray(row) && row.length >= 2)
+    .map(([t, v]) => ({ t, v: typeof v === "number" && Number.isFinite(v) ? v : 0 }));
+}
+
+function metricFromSlugs(
+  slugs: string[],
+  summaries: Map<string, LlamaSummary>,
+  chainKey: string,
+  emptyReason: string,
+): WindowMetric {
+  if (!slugs.length) return emptyMetric(emptyReason);
+  const series = mergeDaily(slugs.map((slug) => dailyFromSummary(summaries.get(slug), chainKey)));
+  const native = slugs.reduce<number | null>((acc, slug) => {
+    const value = native30(summaries.get(slug), chainKey);
+    if (value == null) return acc;
+    return (acc ?? 0) + value;
+  }, null);
+  if (!series.length && native == null) return emptyMetric(emptyReason);
+  return buildWindowMetric(series, native);
 }
 
 async function geckoPools(
@@ -172,57 +199,65 @@ function tokensFromPools(
     .slice(0, 5);
 }
 
-async function buildCard(
+function buildCard(
   pad: LaunchpadSeed,
   feeSummaries: Map<string, LlamaSummary>,
   revenueSummaries: Map<string, LlamaSummary>,
   volumeSummaries: Map<string, LlamaSummary>,
-): Promise<LaunchpadCard> {
-  let gross = emptyPeriod();
-  let revenue = emptyPeriod();
+): LaunchpadCard {
   const methodologies: string[] = [];
-  let usedChainSlice = false;
   for (const slug of pad.feeSlugs) {
-    const summaryFees = feeSummaries.get(slug);
-    const summaryRev = revenueSummaries.get(slug);
-    const chainPeriod = periodFromSummary(summaryFees, pad.volumeChainKey);
-    const totalPeriod = periodFromSummary(summaryFees);
-    if (summaryFees?.chainBreakdown?.[CHAIN_LABEL[pad.volumeChainKey] ?? ""]) {
-      usedChainSlice = true;
-      gross = addPeriod(gross, chainPeriod);
-      revenue = addPeriod(revenue, periodFromSummary(summaryRev, pad.volumeChainKey));
-    } else {
-      gross = addPeriod(gross, totalPeriod);
-      revenue = addPeriod(revenue, periodFromSummary(summaryRev));
-    }
-    const text = methodologyText(summaryFees?.methodology);
+    const text = methodologyText(feeSummaries.get(slug)?.methodology);
     if (text) methodologies.push(`${slug}: ${text}`);
   }
 
-  let volume = emptyPeriod();
+  const grossFees = metricFromSlugs(
+    pad.feeSlugs,
+    feeSummaries,
+    pad.volumeChainKey,
+    pad.feeSlugs.length ? "DefiLlama fees 日频图不可用。" : "未配置 fees slug。",
+  );
+  const protocolRevenue = metricFromSlugs(
+    pad.feeSlugs,
+    revenueSummaries,
+    pad.volumeChainKey,
+    pad.feeSlugs.length ? "DefiLlama revenue 日频图不可用。" : "未配置 fees slug。",
+  );
+
   let volumeNote: string | null = null;
+  let volume: WindowMetric;
   if (!pad.volumeSlugs.length) {
-    volumeNote = "DefiLlama 暂无该发射台的 DEX volume 适配器。";
+    volumeNote = "DefiLlama 暂无该发射台的 DEX volume 适配器，无法从日频图汇总成交量。";
+    volume = emptyMetric(volumeNote);
   } else {
-    for (const slug of pad.volumeSlugs) {
-      const row = volumeSummaries.get(slug);
-      const label = CHAIN_LABEL[pad.volumeChainKey];
-      if (row?.chainBreakdown?.[label ?? ""]) {
-        usedChainSlice = true;
-        volume = addPeriod(volume, periodFromSummary(row, pad.volumeChainKey));
-      } else {
-        volume = addPeriod(volume, periodFromSummary(row));
-      }
-    }
+    volume = metricFromSlugs(
+      pad.volumeSlugs,
+      volumeSummaries,
+      pad.volumeChainKey,
+      "DefiLlama DEX 日频成交量不可用。",
+    );
     if (pad.volumeSlugs.length < pad.feeSlugs.length) {
       volumeNote = `成交量仅覆盖 ${pad.volumeSlugs.join(" + ")}，费用覆盖 ${pad.feeSlugs.join(" + ")}。`;
     }
-    if (usedChainSlice) {
-      volumeNote = [volumeNote, `已优先使用 ${CHAIN_LABEL[pad.volumeChainKey]} 链拆分。`]
-        .filter(Boolean)
-        .join(" ");
-    }
+    volumeNote = [volumeNote, `30/60/90 天窗口由 ${CHAIN_LABEL[pad.volumeChainKey]} 日频图加总；不足完整窗口显示 —。`]
+      .filter(Boolean)
+      .join(" ");
   }
+
+  const creatorShareApprox: WindowMetric = {
+    d30:
+      grossFees.d30 == null ? null : Math.max(0, grossFees.d30 - (protocolRevenue.d30 ?? 0)),
+    d60:
+      grossFees.d60 == null ? null : Math.max(0, grossFees.d60 - (protocolRevenue.d60 ?? 0)),
+    d90:
+      grossFees.d90 == null ? null : Math.max(0, grossFees.d90 - (protocolRevenue.d90 ?? 0)),
+    missing: {
+      ...(grossFees.missing.d30 ? { d30: grossFees.missing.d30 } : {}),
+      ...(grossFees.missing.d60 ? { d60: grossFees.missing.d60 } : {}),
+      ...(grossFees.missing.d90 ? { d90: grossFees.missing.d90 } : {}),
+    },
+    series: residualSeries(grossFees.series, protocolRevenue.series),
+  };
 
   return {
     id: pad.id,
@@ -235,9 +270,9 @@ async function buildCard(
     noteZh: pad.noteZh,
     volume,
     volumeNoteZh: volumeNote,
-    grossFees: gross,
-    protocolRevenue: revenue,
-    creatorShareApprox: residual(gross, revenue),
+    grossFees,
+    protocolRevenue,
+    creatorShareApprox,
     feeMethodologyZh: methodologies[0] ?? null,
     topTokens: [],
     topTokensNoteZh: pad.geckoDexes.length
@@ -262,7 +297,7 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
     {
       name: "DefiLlama summary/fees/{slug} dailyFees",
       url: "https://api.llama.fi/summary/fees/pons-v2?dataType=dailyFees",
-      noteZh: "毛手续费 24h/7d/30d，含 chainBreakdown。",
+      noteZh: "毛手续费。30/60/90 天由 totalDataChart / chain breakdown 日频加总。",
     },
     {
       name: "DefiLlama summary/fees/{slug} dailyRevenue",
@@ -272,7 +307,7 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
     {
       name: "DefiLlama summary/dexs/{slug}",
       url: "https://api.llama.fi/summary/dexs/pump.fun",
-      noteZh: "发射台 DEX / 曲线成交量。",
+      noteZh: "发射台 DEX / 曲线成交量日频图，同样按 30/60/90 天窗口加总。",
     },
     {
       name: "GeckoTerminal dex pools",
@@ -280,6 +315,8 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
       noteZh: "Top5 市值/FDV 样本（第一页池，非全历史榜）。",
     },
   ];
+
+  const emptyChains = () => seed.chains.map((c) => ({ ...c, launchpads: [] }));
 
   try {
     const feeSlugs = [...new Set(seed.launchpads.flatMap((p) => p.feeSlugs))];
@@ -334,7 +371,7 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
 
     const cards: LaunchpadCard[] = [];
     for (const pad of seed.launchpads) {
-      const card = await buildCard(pad, feeSummaries, revenueSummaries, volumeSummaries);
+      const card = buildCard(pad, feeSummaries, revenueSummaries, volumeSummaries);
       const batches = pad.geckoDexes
         .map((g) => geckoResults.get(`${pad.id}:${g.network}:${g.dex}`))
         .filter((x): x is { network: string; pools: GeckoPool[]; tokens: Map<string, GeckoToken> } => Boolean(x));
@@ -350,18 +387,6 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
       launchpads: cards.filter((c) => c.chainId === chain.id),
     }));
 
-    const comparison = ["pons", "pump-fun", "four-meme"]
-      .map((id) => cards.find((c) => c.id === id))
-      .filter((c): c is LaunchpadCard => Boolean(c))
-      .map((c) => ({
-        id: c.id,
-        displayName: c.displayName,
-        chainId: c.chainId,
-        fees24h: c.grossFees.h24,
-        revenue24h: c.protocolRevenue.h24,
-        volume24h: c.volume.h24,
-      }));
-
     if (!duneConfigured) {
       warnings.push("未配置 DUNE_API_KEY：Dune 看板仅作外链对照，实时数来自 DefiLlama / GeckoTerminal。");
     }
@@ -375,7 +400,6 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
       duneConfigured,
       duneBoards: seed.duneBoards,
       chains,
-      comparison,
       sources,
     };
   } catch (error) {
@@ -388,8 +412,7 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
       timezone: "Asia/Shanghai",
       duneConfigured,
       duneBoards: seed.duneBoards,
-      chains: seed.chains.map((c) => ({ ...c, launchpads: [] })),
-      comparison: [],
+      chains: emptyChains(),
       sources,
     };
   }

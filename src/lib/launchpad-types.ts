@@ -1,7 +1,22 @@
-export type PeriodUsd = {
-  h24: number | null;
-  d7: number | null;
+export type RangeKey = "d30" | "d60" | "d90";
+
+export const RANGE_OPTIONS = [
+  { key: "d30" as const, days: 30, label: "最近 30 天" },
+  { key: "d60" as const, days: 60, label: "最近 60 天" },
+  { key: "d90" as const, days: 90, label: "最近 90 天" },
+];
+
+export type DailyPoint = {
+  t: number;
+  v: number;
+};
+
+export type WindowMetric = {
   d30: number | null;
+  d60: number | null;
+  d90: number | null;
+  missing: Partial<Record<RangeKey, string>>;
+  series: DailyPoint[];
 };
 
 export type LaunchpadToken = {
@@ -24,11 +39,11 @@ export type LaunchpadCard = {
   url: string;
   defillamaUrl: string;
   noteZh: string;
-  volume: PeriodUsd;
+  volume: WindowMetric;
   volumeNoteZh: string | null;
-  grossFees: PeriodUsd;
-  protocolRevenue: PeriodUsd;
-  creatorShareApprox: PeriodUsd;
+  grossFees: WindowMetric;
+  protocolRevenue: WindowMetric;
+  creatorShareApprox: WindowMetric;
   feeMethodologyZh: string | null;
   topTokens: LaunchpadToken[];
   topTokensNoteZh: string;
@@ -43,15 +58,6 @@ export type LaunchpadChain = {
   launchpads: LaunchpadCard[];
 };
 
-export type LaunchpadComparisonRow = {
-  id: string;
-  displayName: string;
-  chainId: string;
-  fees24h: number | null;
-  revenue24h: number | null;
-  volume24h: number | null;
-};
-
 export type LaunchpadsPayload = {
   ok: boolean;
   error: string | null;
@@ -61,6 +67,5 @@ export type LaunchpadsPayload = {
   duneConfigured: boolean;
   duneBoards: { title: string; url: string; noteZh: string }[];
   chains: LaunchpadChain[];
-  comparison: LaunchpadComparisonRow[];
   sources: { name: string; url: string; noteZh: string }[];
 };

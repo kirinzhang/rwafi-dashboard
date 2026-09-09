@@ -1,3 +1,5 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -9,10 +11,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatUsd } from "@/lib/format";
-import type { LaunchpadCard } from "@/lib/launchpad-types";
-import { PeriodStats } from "./period-stats";
+import type { LaunchpadCard, RangeKey } from "@/lib/launchpad-types";
+import { RANGE_OPTIONS } from "@/lib/launchpad-types";
+import { BarChart3, Landmark, Receipt, Trophy, Users } from "lucide-react";
+import { MetricTile } from "./metric-tile";
 
-export function LaunchpadCardView({ pad }: { pad: LaunchpadCard }) {
+export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: RangeKey }) {
+  const days = RANGE_OPTIONS.find((item) => item.key === range)?.days ?? 30;
   return (
     <Card className="border-white/5 bg-card/80">
       <CardHeader className="border-b border-white/5">
@@ -49,26 +54,59 @@ export function LaunchpadCardView({ pad }: { pad: LaunchpadCard }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <PeriodStats label="成交量（DEX / 曲线）" period={pad.volume} hint={pad.volumeNoteZh} />
-          <PeriodStats
-            label="毛手续费 Gross fees"
-            period={pad.grossFees}
-            hint={pad.feeMethodologyZh}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            icon={BarChart3}
+            label="成交量"
+            metric={pad.volume}
+            range={range}
+            days={days}
+            color={pad.color}
+            hint={pad.volumeNoteZh}
+            gradientId={`${pad.id}-vol`}
           />
-          <div className="space-y-3">
-            <PeriodStats label="协议收入 Protocol revenue" period={pad.protocolRevenue} />
-            <PeriodStats
-              label="创作者分成（近似）"
-              period={pad.creatorShareApprox}
-              hint="毛手续费 − 协议收入。若 DefiLlama 未拆分则为 0 或 —。"
-            />
-          </div>
+          <MetricTile
+            icon={Receipt}
+            label="毛手续费"
+            metric={pad.grossFees}
+            range={range}
+            days={days}
+            color="#fb7185"
+            hint={pad.feeMethodologyZh}
+            gradientId={`${pad.id}-fees`}
+          />
+          <MetricTile
+            icon={Landmark}
+            label="协议收入"
+            metric={pad.protocolRevenue}
+            range={range}
+            days={days}
+            color="#34d399"
+            hint="DefiLlama dailyRevenue（协议留存）。"
+            gradientId={`${pad.id}-rev`}
+          />
+          <MetricTile
+            icon={Users}
+            label="创作者分成（近似）"
+            metric={pad.creatorShareApprox}
+            range={range}
+            days={days}
+            color="#fbbf24"
+            hint="毛手续费 − 协议收入。未拆分时为 0 或 —。"
+            gradientId={`${pad.id}-creator`}
+          />
         </div>
 
-        <div>
-          <div className="mb-2 text-sm font-medium">Top 5 代币（市值 / FDV）</div>
-          <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">{pad.topTokensNoteZh}</p>
+        <div className="rounded-xl border border-white/8 p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <div className="flex size-8 items-center justify-center rounded-lg border border-white/10 bg-amber-400/10 text-amber-300">
+              <Trophy className="size-4" />
+            </div>
+            <div>
+              <div className="text-sm font-medium">Top 5 代币（市值 / FDV）</div>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">{pad.topTokensNoteZh}</p>
+            </div>
+          </div>
           {pad.topTokens.length === 0 ? (
             <p className="rounded-lg border border-dashed border-white/10 py-6 text-center text-sm text-muted-foreground">
               —

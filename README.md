@@ -13,9 +13,7 @@ Live monitoring dashboard for **tokenized US equity AUM** (DefiLlama protocol TV
 | Tweet snapshot | 2026-09-06 截图数字（Ondo / Backed / Binance / Reality / Robinhood / Backpack / Dinari / Others，合计约 $2.94B）仅作对照，**不当作实时数据** |
 | Platforms table | 发行方、TVL、链、7d/30d、DefiLlama / 官网链接、更新时间（Asia/Shanghai） |
 | Stablecoins | `stablecoincharts/all` 趋势、Top 稳定币、按链（高亮 ETH / SOL / TRON / Base / Arbitrum / **Robinhood Chain**）、RH Chain 历史 |
-| Launchpads `/launchpads` | RH（Pons、StonkBrokers、NOXA Fun）、Solana（pump.fun、LetsBonk、Bags）、BSC（four.meme、Flap.sh）的成交量 / 毛手续费 / 协议收入 / Top5 样本 |
-
-## Run locally / 本地运行
+| Launchpads `/launchpads` | RH（Pons、StonkBrokers、NOXA Fun）、Solana（pump.fun、LetsBonk、stonk.fun）、BSC（four.meme、Flap.sh）的成交量 / 毛手续费 / 协议收入 / Top5 样本；窗口 30/60/90 天 |
 
 ## Run locally / 本地运行
 
@@ -57,10 +55,11 @@ Add an issuer by appending a slug + display name in `data/issuers.json`.
 
 - Fees: `https://api.llama.fi/summary/fees/{slug}?dataType=dailyFees` (gross) and `?dataType=dailyRevenue` (protocol keep)
 - Volume: `https://api.llama.fi/summary/dexs/{slug}`
+- 30/60/90-day totals: sum of `totalDataChart` (or chain `totalDataChartBreakdown` when the pad is sliced to one chain). If the daily series is shorter than the window, the metric is **—** (no extrapolation). 30d may fall back to DefiLlama `total30d` when the chart is missing.
 - Top-5 sample: GeckoTerminal `https://api.geckoterminal.com/api/v2/networks/{network}/dexes/{dex}/pools`
 - Dune boards are cited as **reference links only**. Live numbers do not come from Dune unless you later wire `DUNE_API_KEY`.
 
-Slugs used: `pons-v2`, `pons-v1`, `stonkbrokers`, `noxa-fun`, `pump.fun`, `bonk.fun-launchpad`, `bags`, `four.meme`, `flap-sh`.
+Slugs used: `pons-v2`, `pons-v1`, `stonkbrokers`, `noxa-fun`, `pump.fun`, `bonk.fun-launchpad`, `stonkfun`, `four.meme`, `flap-sh`.
 
 Optional env:
 
