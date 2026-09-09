@@ -9,6 +9,7 @@ type AllocationInput = {
     totalBuybackUsd: number | null;
     totalBurnValueUsd: number | null;
     totalRevenueUsd: number | null;
+    stonkBurnValueUsd?: number | null;
     historyNoteZh: string | null;
   } | null;
 };
@@ -93,6 +94,7 @@ export function buildAllocation(input: AllocationInput): LaunchpadAllocation {
           { name: "StonkFun developers（费率拆分）", url: DOCS.stonkfunDev },
           { name: "GET /api/public/v1/revenue", url: DOCS.stonkfunRevenue },
           { name: "GET /api/public/v1/revenue/history", url: DOCS.stonkfunHistory },
+          { name: "GET /tokens/$STONK/burns", url: "https://www.stonkfun.xyz/api/public/v1/tokens/6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx/burns" },
           { name: "DefiLlama StonkFun HoldersRevenue（对照）", url: DOCS.llamaStonk },
         ],
         chartKind: series.length ? "buyback" : null,
@@ -119,12 +121,17 @@ export function buildAllocation(input: AllocationInput): LaunchpadAllocation {
           {
             label: "累计销毁时估值",
             value: input.stonkfun?.totalBurnValueUsd ?? null,
-            note: "burns.totalValueUsdAtBurn（销毁时价，不等于买回支出）",
+            note: "GET /revenue burns.totalValueUsdAtBurn",
           },
           {
             label: "累计国库手续费",
             value: input.stonkfun?.totalRevenueUsd ?? null,
-            note: "revenue.totalRevenueUsd；不含创作者直接领取",
+            note: "GET /revenue revenue.totalRevenueUsd；不含创作者直接领取",
+          },
+          {
+            label: "$STONK 销毁时估值",
+            value: input.stonkfun?.stonkBurnValueUsd ?? null,
+            note: "GET /tokens/{STONK}/burns totals.valueUsdAtBurn",
           },
         ],
       };

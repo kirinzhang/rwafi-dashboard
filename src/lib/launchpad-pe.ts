@@ -10,7 +10,7 @@ type LlamaTotals = {
 export const PE_DEFINITION: PeDefinition = {
   titleZh: "滚动市盈率（协议收入 run-rate）",
   formulaZh:
-    "PE = 流通市值 ÷（期间日均协议收入 × 365）。优先用 CoinGecko 流通市值；没有流通市值时用 FDV 并在「市值口径」列标注。协议收入 = DefiLlama dailyRevenue（Pons 为 V1+V2 加总）。",
+    "PE = 流通市值 ÷（期间日均协议收入 × 365）。优先用 CoinGecko 流通市值；stonk.fun 用官方 GET /tokens/{STONK} 的 marketCapUsd。没有流通市值时用 FDV 并在「市值口径」列标注。协议收入默认 DefiLlama dailyRevenue（Pons 为 V1+V2）；stonk.fun 用官方 /revenue/history 的 dailyRevenue。",
   pe7dZh: "PE 7d = 市值 / (Rev 7d ÷ 7 × 365)",
   pe30dZh: "PE 30d = 市值 / (Rev 30d ÷ 30 × 365)",
   caveatZh:
@@ -87,14 +87,30 @@ export function buildPeRow(input: {
   revenueSummaries: Map<string, LlamaTotals>;
   revenueSeries: DailyPoint[];
   mcap: EquityMcap | null;
+  firstPartyRevenue?: { rev7d: number | null; rev30d: number | null; sourceZh: string };
 }): PeRow {
-  const rev7 = periodRevenue(input.revenueSummaries, input.feeSlugs, input.revenueSeries, 7);
-  const rev30 = periodRevenue(input.revenueSummaries, input.feeSlugs, input.revenueSeries, 30);
+  const rev7 = input.firstPartyRevenue
+    ? {
+        value: input.firstPartyRevenue.rev7d,
+        sourceZh: input.firstPartyRevenue.sourceZh,
+        missingZh: input.firstPartyRevenue.rev7d == null ? "官方 /revenue/history 不足 7 天。" : null,
+      }
+    : periodRevenue(input.revenueSummaries, input.feeSlugs, input.revenueSeries, 7);
+  const rev30 = input.firstPartyRevenue
+    ? {
+        value: input.firstPartyRevenue.rev30d,
+        sourceZh: input.firstPartyRevenue.sourceZh,
+        missingZh: input.firstPartyRevenue.rev30d == null ? "官方 /revenue/history 不足 30 天。" : null,
+      }
+    : periodRevenue(input.revenueSummaries, input.feeSlugs, input.revenueSeries, 30);
 
   let numeratorUsd: number | null = null;
   let numeratorKind: PeRow["numeratorKind"] = null;
   let numeratorMissingZh: string | null = null;
-  if (input.mcap?.circulatingUsd != null) {
+  if (input.mcap?.source === "stonkfun" && input.mcap.circulatingUsd != null) {
+    numeratorUsd = input.mcap.circulatingUsd;
+    numeratorKind = "first_party_mcap";
+  } else if (input.mcap?.circulatingUsd != null) {
     numeratorUsd = input.mcap.circulatingUsd;
     numeratorKind = "circulating_mcap";
   } else if (input.mcap?.fdvUsd != null) {
@@ -121,11 +137,13 @@ export function buildPeRow(input: {
   ].filter(Boolean);
 
   const mcapSource =
-    input.mcap?.source === "coingecko"
-      ? "CoinGecko circulating mcap"
-      : input.mcap?.source === "geckoterminal"
-        ? "GeckoTerminal market_cap_usd（CoinGecko 429 回退）"
-        : "无市值";
+    input.mcap?.source === "stonkfun"
+      ? "StonkFun GET /tokens/{STONK} market.marketCapUsd"
+      : input.mcap?.source === "coingecko"
+        ? "CoinGecko circulating mcap"
+        : input.mcap?.source === "geckoterminal"
+          ? "GeckoTerminal market_cap_usd（CoinGecko 429 回退）"
+          : "无市值";
 
   return {
     padId: input.padId,

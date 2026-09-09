@@ -5,7 +5,7 @@ export type EquityMcap = {
   geckoCoinId: string;
   circulatingUsd: number | null;
   fdvUsd: number | null;
-  source: "coingecko" | "geckoterminal" | null;
+  source: "coingecko" | "geckoterminal" | "stonkfun" | null;
   sourceUrl: string;
 };
 

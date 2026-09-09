@@ -32,6 +32,12 @@ export type LaunchpadToken = {
   url: string;
 };
 
+export type LaunchpadActivityStat = {
+  label: string;
+  value: string;
+  hint?: string;
+};
+
 export type LaunchpadAllocationTotal = {
   label: string;
   value: number | null;
@@ -69,6 +75,9 @@ export type LaunchpadCard = {
   creatorShareApprox: WindowMetric;
   feeMethodologyZh: string | null;
   allocation: LaunchpadAllocation;
+  activity: LaunchpadActivityStat[] | null;
+  firstPartyAt: string | null;
+  firstPartyAtNoteZh: string | null;
   topTokens: LaunchpadToken[];
   topTokensNoteZh: string;
   sources: { name: string; url: string }[];
@@ -80,7 +89,7 @@ export type PeRow = {
   chainId: string;
   chainName: string;
   tokenSymbol: string | null;
-  numeratorKind: "circulating_mcap" | "fdv" | null;
+  numeratorKind: "circulating_mcap" | "fdv" | "first_party_mcap" | null;
   numeratorUsd: number | null;
   numeratorMissingZh: string | null;
   rev7d: number | null;

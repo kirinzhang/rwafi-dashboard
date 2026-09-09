@@ -32,6 +32,11 @@ export function formatShare(value: number | null | undefined): string {
   return `${value.toFixed(1)}%`;
 }
 
+export function formatCount(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
+}
+
 /** Trailing PE multiple, e.g. 12.4× */
 export function formatMultiple(value: number | null | undefined, digits = 1): string {
   if (value == null || !Number.isFinite(value) || value <= 0) return "—";

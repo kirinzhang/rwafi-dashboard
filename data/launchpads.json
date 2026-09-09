@@ -99,7 +99,7 @@
         "network": "solana",
         "address": "6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx"
       },
-      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）— Solana 发射台，不是 RH 的 StonkBrokers / sTONks。毛手续费 = Raydium CLMM / LaunchLab 平台分成（Llama 日频）。24h 平台成交额来自 StonkFun GET /api/public/v1/stats（tokens.totalVolume24hUsd）。官方 API 无日频成交量历史，30/60/90/全部成交量为 —；不把 /revenue/history 当成交量。"
+      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）— Solana 发射台，不是 RH 的 StonkBrokers / sTONks。24h 成交额、Top5、发射统计、$STONK 市值与 Burn & Earn 来自官方 /api/public/v1。官方没有日频成交量；30/60/90/全部成交量为 —。协议收入图与 PE 分母用 /revenue/history dailyRevenue。"
     },
     {
       "id": "pump-fun",

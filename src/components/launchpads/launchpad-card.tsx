@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatUsd } from "@/lib/format";
+import { formatShanghai, formatUsd } from "@/lib/format";
 import type { LaunchpadCard, RangeKey } from "@/lib/launchpad-types";
 import { RANGE_OPTIONS } from "@/lib/launchpad-types";
 import { barsForFullSeries, barsForWindow, pickMissing, pickRange } from "@/lib/launchpad-windows";
@@ -63,6 +63,12 @@ export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: R
               )}
             </CardTitle>
             <CardDescription className="mt-1 max-w-3xl leading-relaxed">{pad.noteZh}</CardDescription>
+            {pad.firstPartyAt ? (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                官方接口更新（上海）{formatShanghai(pad.firstPartyAt)}
+                {pad.firstPartyAtNoteZh ? ` · ${pad.firstPartyAtNoteZh}` : null}
+              </p>
+            ) : null}
           </div>
           <div className="flex gap-2 text-xs">
             <a href={pad.url} target="_blank" rel="noreferrer" className="text-sky-300 hover:underline">
@@ -107,7 +113,11 @@ export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: R
             metric={pad.protocolRevenue}
             range={range}
             color="#34d399"
-            hint="DefiLlama dailyRevenue（协议留存）。"
+            hint={
+              pad.id === "stonkfun"
+                ? "StonkFun GET /revenue/history dailyRevenue（国库领取的报价手续费）。"
+                : "DefiLlama dailyRevenue（协议留存）。"
+            }
           />
           <MetricKpi
             icon={Users}
@@ -118,6 +128,18 @@ export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: R
             hint="毛手续费 − 协议收入。未拆分时为 0 或 —。"
           />
         </div>
+
+        {pad.activity?.length ? (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            {pad.activity.map((item) => (
+              <div key={item.label} className="rounded-lg border border-white/6 bg-white/2 px-2.5 py-2">
+                <div className="text-[10px] text-muted-foreground">{item.label}</div>
+                <div className="text-sm font-semibold tabular-nums">{item.value}</div>
+                {item.hint ? <div className="text-[10px] text-muted-foreground">{item.hint}</div> : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         <DuneBarChart
           title="日成交量"

@@ -14,6 +14,7 @@ import type { PeDefinition, PeRow } from "@/lib/launchpad-types";
 
 function kindLabel(kind: PeRow["numeratorKind"]): string {
   if (kind === "circulating_mcap") return "流通市值";
+  if (kind === "first_party_mcap") return "官方市值";
   if (kind === "fdv") return "FDV";
   return "—";
 }

@@ -4,6 +4,7 @@ import { fetchEquityMcaps } from "./launchpad-mcap";
 import { buildPeRow, PE_DEFINITION } from "./launchpad-pe";
 import type {
   DailyPoint,
+  LaunchpadActivityStat,
   LaunchpadCard,
   LaunchpadToken,
   LaunchpadsPayload,
@@ -15,8 +16,9 @@ import {
   mergeDaily,
   residualSeries,
 } from "./launchpad-windows";
+import { formatCount, formatShanghai, formatUsd } from "./format";
 import { llamaJson, settled } from "./llama";
-import { fetchStonkFun, STONKFUN_API, STONKFUN_DOCS } from "./stonkfun";
+import { fetchStonkFun, STONKFUN_API, STONKFUN_DOCS, STONK_MINT } from "./stonkfun";
 
 const CACHE = 600;
 
@@ -304,6 +306,9 @@ function buildCard(
     creatorShareApprox,
     feeMethodologyZh: methodologies[0] ?? null,
     allocation: buildAllocation({ padId: pad.id, llamaHolders: [], llamaHoldersNoteZh: null }),
+    activity: null,
+    firstPartyAt: null,
+    firstPartyAtNoteZh: null,
     topTokens: [],
     topTokensNoteZh: pad.geckoDexes.length
       ? "GeckoTerminal 该 DEX 第一页池按 FDV/市值排序的样本，不是全历史市值榜；市值字段常为空时用 FDV。"
@@ -349,12 +354,17 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
     {
       name: "StonkFun GET /api/public/v1/stats",
       url: `${STONKFUN_API}/stats`,
-      noteZh: "官方平台 24h 成交额 tokens.totalVolume24hUsd。无需 key。无日频成交量历史。",
+      noteZh: "官方平台 24h 成交额 tokens.totalVolume24hUsd、代币数、毕业数、平台总市值。无需 key。无日频成交量。",
+    },
+    {
+      name: "StonkFun GET /api/public/v1/tokens",
+      url: `${STONKFUN_API}/tokens?sort=marketCap&page=1&pageSize=5`,
+      noteZh: "Top5 按 market.marketCapUsd。分页存在但单币只有 24h 量，不加总目录当历史成交量。",
     },
     {
       name: "StonkFun GET /api/public/v1/revenue/history",
       url: `${STONKFUN_API}/revenue/history`,
-      noteZh: "国库手续费 / Burn & Earn 买回销毁支出日频。不是成交量。文档：" + STONKFUN_DOCS,
+      noteZh: "国库手续费 / Burn & Earn 日频。stonk.fun PE 分母用 dailyRevenue。不是成交量。文档：" + STONKFUN_DOCS,
     },
     {
       name: "CoinGecko simple/price circulating mcap",
@@ -465,12 +475,59 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
         card.topTokensNoteZh = "GeckoTerminal 该 DEX 池暂无可用 FDV/市值，或接口失败。";
       }
 
-      if (pad.id === "stonkfun" && stonkfun?.volume24hUsd != null) {
+      if (pad.id === "stonkfun" && stonkfun) {
         card.volume24hUsd = stonkfun.volume24hUsd;
         card.volume24hNoteZh =
           "StonkFun GET /api/public/v1/stats → tokens.totalVolume24hUsd。官方平台近 24h 成交额快照，不是日频历史。";
+        card.volumeNoteZh = stonkfun.volumeHistoryNoteZh;
+        card.volume = emptyMetric(stonkfun.volumeHistoryNoteZh);
+        if (stonkfun.revenueHistory.length) {
+          card.protocolRevenue = buildWindowMetric(stonkfun.revenueHistory, null);
+          card.feeMethodologyZh =
+            "官方费率：标准 1% 池 50/50（创作者 0.5% / 平台 0.5%）。协议收入图 = GET /revenue/history dailyRevenue（国库领取），不含创作者从 Raydium 直接领取的份额。";
+          card.creatorShareApprox = emptyMetric(
+            "官方 /revenue/history 不含创作者与奖励持有人从 Raydium 直接领取的费用，不能用国库序列反推创作者分成。",
+          );
+        }
+        card.topTokens = stonkfun.topTokens;
+        card.topTokensNoteZh = stonkfun.topTokensNoteZh;
+        card.firstPartyAt = stonkfun.generatedAt;
+        card.firstPartyAtNoteZh = "StonkFun 各读接口 meta.generatedAt 的最晚值。";
+        const activity: LaunchpadActivityStat[] = [
+          { label: "平台 24h 量", value: formatUsd(stonkfun.volume24hUsd), hint: "/stats tokens.totalVolume24hUsd" },
+          { label: "平台代币总市值", value: formatUsd(stonkfun.platformMcapUsd), hint: "/stats tokens.totalMarketCapUsd" },
+          { label: "$STONK 市值", value: formatUsd(stonkfun.stonkMcapUsd), hint: "/tokens/{mint} market.marketCapUsd" },
+          { label: "代币数", value: formatCount(stonkfun.tokenCount), hint: "/stats tokens.total" },
+          { label: "已毕业", value: formatCount(stonkfun.graduated), hint: "/stats tokens.graduated" },
+          { label: "即将毕业", value: formatCount(stonkfun.aboutToGraduate), hint: "/stats tokens.aboutToGraduate" },
+          { label: "Reward 发射", value: formatCount(stonkfun.rewardLaunches), hint: "/stats tokens.rewardLaunches" },
+          { label: "发射记录", value: formatCount(stonkfun.launchCount), hint: "/launches pagination.total" },
+          { label: "可发射交易对", value: formatCount(stonkfun.launchablePairs), hint: "/pairs?launchable=true" },
+        ];
+        if (stonkfun.lastBuybackAt) {
+          activity.push({
+            label: "最近买回",
+            value: formatShanghai(stonkfun.lastBuybackAt),
+            hint: "/revenue lastBuybackAt",
+          });
+        }
+        if (stonkfun.lastBurnAt) {
+          activity.push({
+            label: "最近 $STONK 销毁",
+            value: formatShanghai(stonkfun.lastBurnAt),
+            hint: "/tokens/{STONK}/burns lastBurnAt",
+          });
+        }
+        card.activity = activity;
         card.sources = [
-          { name: "StonkFun /stats 24h volume", url: `${STONKFUN_API}/stats` },
+          { name: "StonkFun /stats", url: `${STONKFUN_API}/stats` },
+          { name: "StonkFun /tokens Top5", url: `${STONKFUN_API}/tokens?sort=marketCap` },
+          { name: "StonkFun /tokens/$STONK", url: `${STONKFUN_API}/tokens/${STONK_MINT}` },
+          { name: "StonkFun /tokens/$STONK/burns", url: `${STONKFUN_API}/tokens/${STONK_MINT}/burns` },
+          { name: "StonkFun /revenue", url: `${STONKFUN_API}/revenue` },
+          { name: "StonkFun /revenue/history", url: `${STONKFUN_API}/revenue/history` },
+          { name: "StonkFun /launches", url: `${STONKFUN_API}/launches` },
+          { name: "StonkFun /pairs", url: `${STONKFUN_API}/pairs?launchable=true` },
           { name: "StonkFun developers", url: STONKFUN_DOCS },
           ...card.sources,
         ];
@@ -493,6 +550,19 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
     const peTable = seed.launchpads.map((pad) => {
       const card = cards.find((c) => c.id === pad.id);
       const token = pad.equityToken;
+      const firstPartyMcap =
+        pad.id === "stonkfun" && stonkfun?.stonkMcapUsd != null
+          ? {
+              symbol: "STONK",
+              geckoCoinId: token?.geckoCoinId ?? "stonk-3",
+              circulatingUsd: stonkfun.stonkMcapUsd,
+              fdvUsd: stonkfun.stonkFdvUsd,
+              source: "stonkfun" as const,
+              sourceUrl: `${STONKFUN_API}/tokens/${STONK_MINT}`,
+            }
+          : token
+            ? mcaps.get(token.geckoCoinId) ?? null
+            : null;
       return buildPeRow({
         padId: pad.id,
         displayName: pad.displayName,
@@ -503,7 +573,15 @@ export async function getLaunchpadsData(): Promise<LaunchpadsPayload> {
         feeSlugs: pad.feeSlugs,
         revenueSummaries,
         revenueSeries: card?.protocolRevenue.series ?? [],
-        mcap: token ? mcaps.get(token.geckoCoinId) ?? null : null,
+        mcap: firstPartyMcap,
+        firstPartyRevenue:
+          pad.id === "stonkfun" && stonkfun
+            ? {
+                rev7d: stonkfun.rev7d,
+                rev30d: stonkfun.rev30d,
+                sourceZh: "StonkFun GET /revenue/history dailyRevenue（UTC 日加总）",
+              }
+            : undefined,
       });
     });
 
