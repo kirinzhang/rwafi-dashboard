@@ -62,14 +62,26 @@ export function lastDays<T extends { date: number }>(series: T[], days: number):
   return series.filter((p) => p.date >= start);
 }
 
+export const OTHER_STACK_KEY = "other";
+export const OTHER_STACK_COLOR = "#64748b";
+
 export function mergeIssuerSeries(
   seriesList: { slug: string; points: SeriesPoint[] }[],
 ): SeriesPoint[] {
   return alignPlatformSeries(seriesList).map((row) => ({ date: row.date, value: row.total }));
 }
 
+type NamedSeries = {
+  slug: string;
+  displayName: string;
+  shortName: string;
+  color: string;
+  points: SeriesPoint[];
+};
+
 export function alignPlatformSeries(
   seriesList: { slug: string; points: SeriesPoint[] }[],
+  mode: "forward" | "zero" = "forward",
 ): { date: number; total: number; values: Record<string, number> }[] {
   const dates = new Set<number>();
   const bySlug = new Map<string, Map<number, number>>();
@@ -92,17 +104,82 @@ export function alignPlatformSeries(
     let total = 0;
     for (const [slug, map] of bySlug) {
       const next = map.get(date);
+      if (mode === "zero") {
+        const value = next ?? 0;
+        values[slug] = value;
+        total += value;
+        continue;
+      }
       if (next != null) {
         lastBySlug.set(slug, next);
         seen.add(slug);
       }
-      // Only forward-fill after the platform's first real observation.
       const value = seen.has(slug) ? (lastBySlug.get(slug) ?? 0) : 0;
       values[slug] = value;
       total += value;
     }
     return { date, total, values };
   });
+}
+
+export function buildStackedIssuance(
+  seriesList: NamedSeries[],
+  topN = 10,
+): {
+  series: {
+    key: string;
+    displayName: string;
+    shortName: string;
+    color: string;
+    latestUsd: number;
+  }[];
+  points: { date: number; total: number; values: Record<string, number> }[];
+} {
+  const withHistory = seriesList.filter((item) => item.points.some((p) => p.value > 0));
+  const aligned = alignPlatformSeries(withHistory, "zero");
+  if (!aligned.length) return { series: [], points: [] };
+  const last = aligned[aligned.length - 1];
+  const ranked = [...withHistory]
+    .map((item) => ({ ...item, latest: last.values[item.slug] ?? 0 }))
+    .sort((a, b) => b.latest - a.latest);
+  const top = ranked.slice(0, topN);
+  const rest = ranked.slice(topN);
+  const series = [
+    ...top.map((item) => ({
+      key: item.slug,
+      displayName: item.displayName,
+      shortName: item.shortName,
+      color: item.color,
+      latestUsd: item.latest,
+    })),
+    ...(rest.length
+      ? [
+          {
+            key: OTHER_STACK_KEY,
+            displayName: "其他",
+            shortName: "其他",
+            color: OTHER_STACK_COLOR,
+            latestUsd: rest.reduce((sum, item) => sum + item.latest, 0),
+          },
+        ]
+      : []),
+  ];
+  const points = aligned.map((row) => {
+    const values: Record<string, number> = {};
+    let total = 0;
+    for (const item of top) {
+      const value = row.values[item.slug] ?? 0;
+      values[item.slug] = value;
+      total += value;
+    }
+    if (rest.length) {
+      const other = rest.reduce((sum, item) => sum + (row.values[item.slug] ?? 0), 0);
+      values[OTHER_STACK_KEY] = other;
+      total += other;
+    }
+    return { date: row.date, total, values };
+  });
+  return { series, points };
 }
 
 export function usdFromPegged(

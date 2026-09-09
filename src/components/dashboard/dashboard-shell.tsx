@@ -4,8 +4,8 @@ import type { DashboardPayload } from "@/lib/types";
 import { useCallback, useEffect, useState } from "react";
 import { HeroKpis } from "./hero-kpis";
 import { IssuerShareCard } from "./issuer-share-card";
+import { IssuanceStackChart } from "./issuance-stack-chart";
 import { MethodologyFooter } from "./methodology-footer";
-import { PlatformTrendChart } from "./platform-trend-chart";
 import { PlatformsTable } from "./platforms-table";
 import { SiteHeader } from "./site-header";
 import { StablecoinSection } from "./stablecoin-section";
@@ -74,6 +74,19 @@ export function DashboardShell({ initialData }: { initialData: DashboardPayload 
       <ThesisStrip />
       <HeroKpis items={kpis} />
 
+      <IssuanceStackChart
+        history={
+          data.equityIssuanceStack ?? {
+            yAxisZh: "DefiLlama 协议 TVL（USD）",
+            yAxisEn: "DefiLlama protocol TVL (USD)",
+            rankingRuleZh: "",
+            missingLiveZh: [],
+            series: [],
+            points: [],
+          }
+        }
+      />
+
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         <IssuerShareCard
           issuers={data.issuers}
@@ -84,8 +97,6 @@ export function DashboardShell({ initialData }: { initialData: DashboardPayload 
         />
         <TweetSnapshotCard snapshot={data.tweetSnapshot} />
       </div>
-
-      <PlatformTrendChart history={data.equityPlatformHistory ?? { series: [], points: [] }} />
 
       <PlatformsTable issuers={data.issuers} />
       <StablecoinSection data={data.stables} />

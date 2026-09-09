@@ -10,6 +10,7 @@ Live monitoring dashboard for **tokenized US equity AUM** (DefiLlama protocol TV
 | --- | --- |
 | Hero KPIs | 追踪发行方代币化美股 AUM 合计、Robinhood 股权代币（无免费实时源时标明）、全球美元稳定币流通、RH Chain 稳定币流通、RH Chain DeFi TVL（明确标注 **不是** 股权 AUM） |
 | Issuer market share | 横向条形图 + HHI 集中度，来自实时协议 TVL |
+| Stacked issuance | 按日堆叠柱：Top 10 发行方（最新一日市占锁定）+「其他」；Y = DefiLlama protocol TVL |
 | Tweet snapshot | 2026-09-06 截图数字（Ondo / Backed / Binance / Reality / Robinhood / Backpack / Dinari / Others，合计约 $2.94B）仅作对照，**不当作实时数据** |
 | Platforms table | 发行方、TVL、链、7d/30d、DefiLlama / 官网链接、更新时间（Asia/Shanghai） |
 | Stablecoins | `stablecoincharts/all` 趋势、Top 稳定币、按链（高亮 ETH / SOL / TRON / Base / Arbitrum / **Robinhood Chain**）、RH Chain 历史 |
@@ -45,7 +46,7 @@ Server Route Handlers proxy and cache (`revalidate` 10 minutes). Client auto-ref
 **Tokenized equities / RWA platforms**
 
 - `https://api.llama.fi/protocols` — current TVL, 1d/7d, category
-- `https://api.llama.fi/protocol/{slug}` — historical `tvl[]`
+- `https://api.llama.fi/protocol/{slug}` — historical `tvl[]` (`totalLiquidityUSD`) for the stacked issuance bars and 30d changes
 - Seeded slugs in [`data/issuers.json`](data/issuers.json): `ondo-global-markets`, `xstocks`, `dinari`, plus `backedfi`, `prestocks`, `openstock`, and auto-discover of RWA names matching stock/equity/xstock
 - `https://api.llama.fi/v2/chains` — Robinhood Chain `chainId` 4663 as **DeFi TVL context only**
 

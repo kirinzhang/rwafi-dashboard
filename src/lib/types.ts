@@ -9,22 +9,27 @@ export type SeriesPoint = {
   value: number;
 };
 
-export type EquityPlatformMeta = {
-  slug: string;
+export type StackedIssuanceSeries = {
+  key: string;
   displayName: string;
   shortName: string;
   color: string;
+  latestUsd: number;
 };
 
-export type EquityPlatformPoint = {
+export type StackedIssuancePoint = {
   date: number;
   total: number;
   values: Record<string, number>;
 };
 
-export type EquityPlatformHistory = {
-  series: EquityPlatformMeta[];
-  points: EquityPlatformPoint[];
+export type StackedIssuanceHistory = {
+  yAxisZh: string;
+  yAxisEn: string;
+  rankingRuleZh: string;
+  missingLiveZh: string[];
+  series: StackedIssuanceSeries[];
+  points: StackedIssuancePoint[];
 };
 
 export type IssuerRow = {
@@ -114,7 +119,7 @@ export type DashboardPayload = {
   equityConcentrationZh: string;
   equityConcentrationEn: string;
   equityHistory: SeriesPoint[];
-  equityPlatformHistory: EquityPlatformHistory;
+  equityIssuanceStack: StackedIssuanceHistory;
   tweetSnapshot: TweetSnapshot;
   stables: {
     top: StablecoinRow[];

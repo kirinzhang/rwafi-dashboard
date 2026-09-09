@@ -35,6 +35,12 @@ export function MethodologyFooter({
           可能纳入更多托管/发行账本。xStocks 的 DefiLlama RWA 平台页 On-chain AUM 也可能高于协议 endpoint。
         </p>
         <p>
+          <strong className="text-foreground/80">堆叠发行量图：</strong>
+          柱高 = 当日追踪发行方 DefiLlama 协议 TVL 之和。Top 10
+          按最新交易日市占一次性固定（全图同一图例）；其余为「其他」。缺测日记 0。Robinhood / Binance /
+          Reality / Backpack 无免费历史，不进入柱。
+        </p>
+        <p>
           <strong className="text-foreground/80">不会编造的行：</strong>
           Binance、Reality、Robinhood 股权账本、Backpack Securities
           目前没有免费、可自动化的实时源，因此只出现在「推文快照」卡，并标明 2026-09-06 静态截图。

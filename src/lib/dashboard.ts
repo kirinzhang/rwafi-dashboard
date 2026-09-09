@@ -15,7 +15,7 @@ import {
 import { isRwaXyzConfigured } from "./rwa-xyz";
 import {
   changeFromSeries,
-  alignPlatformSeries,
+  buildStackedIssuance,
   lastDays,
   mergeIssuerSeries,
   pctChange,
@@ -25,7 +25,6 @@ import type {
   ChainStableRow,
   ChangeSet,
   DashboardPayload,
-  EquityPlatformHistory,
   IssuerRow,
   KpiBlock,
   SeriesPoint,
@@ -121,7 +120,14 @@ function emptyPayload(fetchedAt: string, warnings: string[], error: string | nul
     equityConcentrationZh: "—",
     equityConcentrationEn: "—",
     equityHistory: [],
-    equityPlatformHistory: { series: [], points: [] },
+    equityIssuanceStack: {
+      yAxisZh: "DefiLlama 协议 TVL（USD）",
+      yAxisEn: "DefiLlama protocol TVL (USD)",
+      rankingRuleZh: "",
+      missingLiveZh: [],
+      series: [],
+      points: [],
+    },
     tweetSnapshot,
     stables: { top: [], byChain: [], globalHistory: [], rhHistory: [] },
     sources: {
@@ -279,21 +285,22 @@ export async function getDashboardData(): Promise<DashboardPayload> {
         value: p.totalLiquidityUSD,
       })),
     }));
-    const alignedHistory = lastDays(alignPlatformSeries(perIssuerHistory), 800);
+    const stacked = buildStackedIssuance(perIssuerHistory, 10);
+    const missingLiveZh = [
+      ...perIssuerHistory
+        .filter((item) => !item.points.some((p) => p.value > 0))
+        .map((item) => `${item.displayName}（${item.slug}）：DefiLlama 无可用 tvl[]`),
+      "Robinhood / Binance / Reality / Backpack：无免费历史序列，只出现在推文快照",
+    ];
     const equityHistory = lastDays(mergeIssuerSeries(perIssuerHistory), 400);
-    const liveHistorySlugs = new Set(
-      perIssuerHistory.filter((item) => item.points.some((p) => p.value > 0)).map((item) => item.slug),
-    );
-    const equityPlatformHistory: EquityPlatformHistory = {
-      series: issuerRows
-        .filter((row) => liveHistorySlugs.has(row.slug))
-        .map((row) => ({
-          slug: row.slug,
-          displayName: row.displayName,
-          shortName: row.shortName,
-          color: row.color,
-        })),
-      points: alignedHistory,
+    const equityIssuanceStack = {
+      yAxisZh: "DefiLlama 协议 TVL（USD）",
+      yAxisEn: "DefiLlama protocol TVL (USD)",
+      rankingRuleZh:
+        "Top 10 按对齐后最新交易日的协议 TVL 市占一次性固定，全图沿用同一图例与颜色；其余合并为「其他」。缺测日记 0，不前向填充。",
+      missingLiveZh,
+      series: stacked.series,
+      points: lastDays(stacked.points, 800),
     };
 
     const globalHistory = chartToSeries(chartsAll);
@@ -381,7 +388,7 @@ export async function getDashboardData(): Promise<DashboardPayload> {
     payload.equityConcentrationZh = concentration.zh;
     payload.equityConcentrationEn = concentration.en;
     payload.equityHistory = equityHistory;
-    payload.equityPlatformHistory = equityPlatformHistory;
+    payload.equityIssuanceStack = equityIssuanceStack;
     payload.stables = {
       top,
       byChain,
