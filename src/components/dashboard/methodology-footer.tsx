@@ -1,4 +1,5 @@
 import { formatShanghai } from "@/lib/format";
+import Link from "next/link";
 
 type Sources = {
   endpoints: { name: string; url: string; noteZh: string }[];
@@ -65,9 +66,9 @@ export function MethodologyFooter({
             <p>
               <strong className="text-foreground/80">Robinhood 代理指标：</strong>
               Robinhood Chain DeFi TVL（chainId 4663）是链级上下文，<em>不是</em>代币化美股 AUM。稳定币面板已独立到{" "}
-              <a href="/stablecoins" className="text-sky-300 hover:underline">
+              <Link href="/stablecoins" className="text-sky-300 hover:underline">
                 /stablecoins
-              </a>
+              </Link>
               。
             </p>
           </>
@@ -80,9 +81,9 @@ export function MethodologyFooter({
             <p>
               <strong className="text-foreground/80">Robinhood Chain：</strong>
               链上稳定币流通是链级上下文，<em>不是</em>代币化美股 AUM。股权代币请看{" "}
-              <a href="/" className="text-sky-300 hover:underline">
+              <Link href="/" className="text-sky-300 hover:underline">
                 美股代币
-              </a>
+              </Link>
               。
             </p>
           </>
