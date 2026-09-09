@@ -2,7 +2,6 @@
 
 import type { StablesPayload } from "@/lib/types";
 import { useCallback, useEffect, useState } from "react";
-import { HeroKpis } from "./hero-kpis";
 import { MethodologyFooter } from "./methodology-footer";
 import { SiteHeader } from "./site-header";
 import { StablecoinSection } from "./stablecoin-section";
@@ -36,13 +35,11 @@ export function StablesShell({ initialData }: { initialData: StablesPayload }) {
     return () => window.clearInterval(id);
   }, [refresh]);
 
-  const kpis = [data.kpis.globalStables, data.kpis.rhStables];
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
       <SiteHeader
-        title="稳定币看板"
-        subtitle="全球美元稳定币流通、按币种与按链拆分，含 Robinhood Chain。这是链上稳定币上下文，不是代币化美股 AUM。"
+        title="稳定币"
+        subtitle="美元稳定币流通市值、按币种与按链拆分。布局参考 DefiLlama Stablecoins；数据仍是 stablecoins.llama.fi。Robinhood Chain 是链上稳定币上下文，不是代币化美股 AUM。"
         fetchedAt={data.fetchedAt}
         refreshing={refreshing}
         onRefresh={() => void refresh()}
@@ -60,8 +57,7 @@ export function StablesShell({ initialData }: { initialData: StablesPayload }) {
         </div>
       ) : null}
 
-      <HeroKpis items={kpis} />
-      <StablecoinSection data={data.stables} />
+      <StablecoinSection data={data.stables} kpis={data.kpis} />
       <MethodologyFooter sources={data.sources} fetchedAt={data.fetchedAt} variant="stables" />
     </div>
   );

@@ -51,12 +51,13 @@ export function MethodologyFooter({
             </p>
             <p>
               <strong className="text-foreground/80">堆叠发行量 · 按股票：</strong>
-              同一批发行方的 DefiLlama <code className="rounded bg-white/5 px-1">tokensInUsd[]</code>
-              ，把代币符号映射到 TradFi ticker 后加总。Ondo 去掉 <code className="rounded bg-white/5 px-1">ON</code>{" "}
-              后缀（AAPLON → AAPL），xStocks 去掉 <code className="rounded bg-white/5 px-1">X</code>，BackedFi
-              去掉前缀 <code className="rounded bg-white/5 px-1">B</code>。现金类（USD / USDT / USDC / USD+）与无法识别的符号、以及没有
-              tokensInUsd 的发行方/日期，计入「其他」。Top 10 按最新一日已映射市占锁定。
-              <em>不会</em>用发行方合计按比例编造个股序列。
+              与按发行方使用同一批协议、同一日 TVL。拆分来自 DefiLlama{" "}
+              <code className="rounded bg-white/5 px-1">tokensInUsd[]</code> 最后一次日观测（不把盘中快照加总）。Ondo 去掉{" "}
+              <code className="rounded bg-white/5 px-1">ON</code>（含两字母代码：MUON → MU），xStocks 去掉{" "}
+              <code className="rounded bg-white/5 px-1">X</code>，BackedFi 去掉前缀{" "}
+              <code className="rounded bg-white/5 px-1">B</code>。USDON / USDC / USYC / USD+
+              等现金与收益产品、带数字的债券代币进入「其他」。CRCL 是 Circle Internet Group 的 NYSE
+              股票代币，不是 USDC。合计 = 映射个股 +「其他」= 当日协议 TVL。
             </p>
             <p>
               <strong className="text-foreground/80">不会编造的行：</strong>

@@ -227,7 +227,10 @@ function buildCard(
   let volumeNote: string | null = null;
   let volume: WindowMetric;
   if (!pad.volumeSlugs.length) {
-    volumeNote = "DefiLlama 暂无该发射台的 DEX volume 适配器，无法从日频图汇总成交量。";
+    volumeNote =
+      pad.id === "stonkfun"
+        ? "成交量为空的原因：DefiLlama summary/dexs/stonkfun（及 stonk.fun / stonk-fun）返回 400，没有 DEX volume 适配器；GeckoTerminal Solana DEX 列表无 stonkfun；DexScreener 搜到的是无关 STONKFUN 池，不能当发射台量。费用适配器有日频（Raydium CLMM Burn & Earn 平台分成），不能反推成交量。因此成交量柱为 —，费用图仍可用。"
+        : "DefiLlama 暂无该发射台的 DEX volume 适配器，无法从日频图汇总成交量。";
     volume = emptyMetric(volumeNote);
   } else {
     volume = metricFromSlugs(
@@ -239,7 +242,7 @@ function buildCard(
     if (pad.volumeSlugs.length < pad.feeSlugs.length) {
       volumeNote = `成交量仅覆盖 ${pad.volumeSlugs.join(" + ")}，费用覆盖 ${pad.feeSlugs.join(" + ")}。`;
     }
-    volumeNote = [volumeNote, `30/60/90 天窗口由 ${CHAIN_LABEL[pad.volumeChainKey]} 日频图加总；不足完整窗口显示 —。`]
+    volumeNote = [volumeNote, `30/60/90 天与全部由 ${CHAIN_LABEL[pad.volumeChainKey]} 日频图加总；不足完整窗口显示 —。`]
       .filter(Boolean)
       .join(" ");
   }
@@ -251,10 +254,13 @@ function buildCard(
       grossFees.d60 == null ? null : Math.max(0, grossFees.d60 - (protocolRevenue.d60 ?? 0)),
     d90:
       grossFees.d90 == null ? null : Math.max(0, grossFees.d90 - (protocolRevenue.d90 ?? 0)),
+    all:
+      grossFees.all == null ? null : Math.max(0, grossFees.all - (protocolRevenue.all ?? 0)),
     missing: {
       ...(grossFees.missing.d30 ? { d30: grossFees.missing.d30 } : {}),
       ...(grossFees.missing.d60 ? { d60: grossFees.missing.d60 } : {}),
       ...(grossFees.missing.d90 ? { d90: grossFees.missing.d90 } : {}),
+      ...(grossFees.missing.all ? { all: grossFees.missing.all } : {}),
     },
     series: residualSeries(grossFees.series, protocolRevenue.series),
   };

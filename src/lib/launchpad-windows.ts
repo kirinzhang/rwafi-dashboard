@@ -66,7 +66,8 @@ export function emptyMetric(reason: string): WindowMetric {
     d30: null,
     d60: null,
     d90: null,
-    missing: { d30: reason, d60: reason, d90: reason },
+    all: null,
+    missing: { d30: reason, d60: reason, d90: reason, all: reason },
     series: [],
   };
 }
@@ -81,16 +82,51 @@ export function buildWindowMetric(full: DailyPoint[], native30: number | null): 
     value30 = native30;
     reason30 = null;
   }
+  const allValue = full.length ? full.reduce((sum, p) => sum + p.v, 0) : null;
   const missing: WindowMetric["missing"] = {};
   if (value30 == null && reason30) missing.d30 = reason30;
   if (d60.value == null && d60.reason) missing.d60 = d60.reason;
   if (d90.value == null && d90.reason) missing.d90 = d90.reason;
+  if (allValue == null) missing.all = "无 DefiLlama 日频序列";
   return {
     d30: value30,
     d60: d60.value,
     d90: d90.value,
+    all: allValue,
     missing,
-    series: lastDays(full, 90),
+    series: full,
+  };
+}
+
+/** Full history bars. Daily if short; weekly sums if the calendar span is too wide. */
+export function barsForFullSeries(
+  series: DailyPoint[],
+  maxBars = 160,
+): { points: DailyPoint[]; note: string | null } {
+  if (!series.length) return { points: [], note: null };
+  const sorted = [...series].sort((a, b) => a.t - b.t);
+  const start = sorted[0].t;
+  const end = sorted[sorted.length - 1].t;
+  const byT = new Map(sorted.map((p) => [p.t, p.v]));
+  const nDays = Math.max(1, Math.round((end - start) / DAY) + 1);
+  if (nDays <= maxBars) {
+    const out: DailyPoint[] = [];
+    for (let t = start; t <= end; t += DAY) {
+      out.push({ t, v: byT.get(t) ?? 0 });
+    }
+    return { points: out, note: null };
+  }
+  const WEEK = 7 * DAY;
+  const buckets = new Map<number, number>();
+  for (let t = start; t <= end; t += DAY) {
+    const week = Math.floor(t / WEEK) * WEEK;
+    buckets.set(week, (buckets.get(week) ?? 0) + (byT.get(t) ?? 0));
+  }
+  return {
+    points: [...buckets.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([t, v]) => ({ t, v })),
+    note: `全部跨度约 ${nDays} 个日历日，柱为每周加总（不是抽样漏天）。`,
   };
 }
 

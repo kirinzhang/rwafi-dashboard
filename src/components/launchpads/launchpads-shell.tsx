@@ -44,7 +44,7 @@ export function LaunchpadsShell({ initialData }: { initialData: LaunchpadsPayloa
       <Tabs defaultValue={defaultChain} className="gap-6">
         <SiteHeader
           title="发射台看板"
-          subtitle="RH：Pons、Long.xyz · Solana：stonk.fun、pump.fun · BSC：four.meme、Flap.sh。日频柱状图按 30/60/90 天窗口加总。对照用，不是投资建议。"
+          subtitle="RH：Pons、Long.xyz · Solana：stonk.fun、pump.fun · BSC：four.meme、Flap.sh。日频柱按 30 / 60 / 90 天或全部历史。对照用，不是投资建议。"
           fetchedAt={data.fetchedAt}
           refreshing={refreshing}
           onRefresh={() => void refresh()}
@@ -89,7 +89,8 @@ export function LaunchpadsShell({ initialData }: { initialData: LaunchpadsPayloa
               <h2 className="text-lg font-semibold">{chain.name}</h2>
               <Badge variant="outline">{chain.launchpads.length} 个发射台</Badge>
               <span className="text-xs text-muted-foreground">
-                {RANGE_OPTIONS.find((item) => item.key === range)?.label}合计来自 DefiLlama 日频图
+                {RANGE_OPTIONS.find((item) => item.key === range)?.label}
+                {range === "all" ? "为完整日频序列加总" : "合计来自 DefiLlama 日频图"}
               </span>
             </div>
             {chain.launchpads.length === 0 ? (
@@ -112,7 +113,7 @@ export function LaunchpadsShell({ initialData }: { initialData: LaunchpadsPayloa
         <p>
           实时路径优先 DefiLlama 免费 fees / dexs 接口（无需 API Key）。30 / 60 / 90
           天指标由 <code className="text-foreground">totalDataChart</code> 与链拆分日频加总；窗口不足时显示
-          — 并说明原因，不会外推。GeckoTerminal 只用于 Top5 池样本。Dune 看板列为对照链接
+          — 并说明原因，不会外推。「全部」加总完整可用日频；柱太多时按周加总并在图上说明。GeckoTerminal 只用于 Top5 池样本。Dune 看板列为对照链接
           {data.duneConfigured ? "（已配置 DUNE_API_KEY，但本页尚未执行付费查询）" : "（未配置 DUNE_API_KEY）"}
           ，不会把看板截图数字当成实时值。
         </p>

@@ -6,6 +6,7 @@ import { isRwaXyzConfigured } from "./rwa-xyz";
 import { buildStackedIssuance, changeFromSeries, lastDays, mergeIssuerSeries } from "./series";
 import {
   collectTickerSeries,
+  TICKER_NOTES,
   TICKER_RANKING_RULE_ZH,
   TICKER_Y_AXIS_EN,
   TICKER_Y_AXIS_ZH,
@@ -231,7 +232,10 @@ export async function getDashboardData(): Promise<DashboardPayload> {
       yAxisEn: TICKER_Y_AXIS_EN,
       rankingRuleZh: TICKER_RANKING_RULE_ZH,
       missingLiveZh: tickerCollected.notesZh,
-      series: tickerStacked.series,
+      series: tickerStacked.series.map((item) => ({
+        ...item,
+        noteZh: TICKER_NOTES[item.key],
+      })),
       points: lastDays(tickerStacked.points, 800),
     };
     const rhChain = (chains ?? []).find((c) => c.name === "Robinhood Chain" || c.chainId === 4663);

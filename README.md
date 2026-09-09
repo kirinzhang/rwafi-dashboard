@@ -12,7 +12,7 @@ Top-left nav switches pages. Deep links work.
 | --- | --- | --- |
 | `/` | **美股代币** | 股权 AUM KPI、堆叠发行量图（按发行方 / 按股票）、发行方市占、推文快照、平台表。不含稳定币主面板。 |
 | `/stablecoins` | **稳定币** | 全球与 Robinhood Chain 稳定币 KPI、趋势、Top 币种、按链拆分。 |
-| `/launchpads` | **发射台** | RH（Pons、Long.xyz）、Solana（stonk.fun、pump.fun）、BSC（four.meme、Flap.sh）；30/60/90 天日频柱状图。 |
+| `/launchpads` | **发射台** | RH（Pons、Long.xyz）、Solana（stonk.fun、pump.fun）、BSC（four.meme、Flap.sh）；30/60/90/全部 日频柱。 |
 
 ## What it monitors / 监控什么
 
@@ -23,8 +23,8 @@ Top-left nav switches pages. Deep links work.
 | Issuer market share | 美股代币 | 横向条形图 + HHI 集中度，来自实时协议 TVL |
 | Tweet snapshot | 美股代币 | 2026-09-06 截图数字仅作对照，**不当作实时数据** |
 | Platforms table | 美股代币 | 发行方、TVL、链、7d/30d、DefiLlama / 官网链接、更新时间（Asia/Shanghai） |
-| Stablecoins | 稳定币 | `stablecoincharts/all` 趋势、Top 稳定币、按链（高亮 ETH / SOL / TRON / Base / Arbitrum / **Robinhood Chain**）、RH Chain 历史 |
-| Launchpads | 发射台 | 日频柱状图 + 窗口合计 |
+| Stablecoins | 稳定币 | DefiLlama 风格总市值、USDT 占比、历史面积图、Top 25 币种、按链条形图、RH Chain 历史 |
+| Launchpads | 发射台 | 日频柱；窗口 **30 / 60 / 90 / 全部**（全部为完整序列，过长则周加总） |
 
 ## Run locally / 本地运行
 
@@ -55,15 +55,16 @@ Server Route Handlers proxy and cache (`revalidate` 10 minutes). Client auto-ref
 
 **Stock-dimension stacked bars**
 
-Same protocol JSON. No extra paid feed. Mapping:
+Same protocol JSON and **the same daily TVL total** as the issuer stack. Mapping:
 
-- Ondo: strip trailing `ON` (`AAPLON` → `AAPL`)
-- xStocks: strip trailing `X` (`TSLAX` → `TSLA`)
-- BackedFi: strip leading `B` (`BNVDA` → `NVDA`)
-- Cash (`USD`, `USDT`, `USDC`, `USD+`, symbols starting `USD`) and unrecognized tokens → 「其他」
-- Days/issuers with TVL but no `tokensInUsd` → residual in 「其他」
-- Ranking: Top 10 tickers by **latest mapped day** share; remainder + unmapped → 「其他」
-- **Never** allocate an issuer’s total TVL across tickers. If a protocol only reports cash (Dinari `USD+`, OpenStock `USDT`) or has no token history (PreStocks), that residual stays in 「其他」 or the stock mode shows an empty state when nothing maps.
+- Last `tokensInUsd` snapshot per UTC day (do not add intra-day points onto the daily bar)
+- Ondo: strip trailing `ON`, including 2-letter tickers (`MUON` → `MU`, `AAPLON` → `AAPL`)
+- xStocks: strip trailing `X` (`TSLAX` → `TSLA`, `CRCLX` → `CRCL`)
+- BackedFi: strip leading `B` (`BNVDA` → `NVDA`); bond-like symbols with digits stay in 「其他」
+- Cash / yield (USDON, USDC, USDT, **USYC**, USD+, symbols containing `USD`) → 「其他」, never a stock slice
+- `CRCL` is NYSE Circle Internet Group **equity** (CRCLON / CRCLX), not Circle stablecoins
+- Unmapped residual = that issuer’s TVL − mapped tickers, so issuer-mode and stock-mode totals match
+- Ranking: Top 10 tickers by latest mapped day share; remainder + unmapped → 「其他」
 
 Add an issuer by appending a slug + display name in `data/issuers.json`.
 
@@ -78,7 +79,9 @@ Add an issuer by appending a slug + display name in `data/issuers.json`.
 
 - Fees: `https://api.llama.fi/summary/fees/{slug}?dataType=dailyFees` (gross) and `?dataType=dailyRevenue` (protocol keep)
 - Volume: `https://api.llama.fi/summary/dexs/{slug}`
-- 30/60/90-day totals **and daily bar charts**: sum / plot `totalDataChart` (or chain `totalDataChartBreakdown`). Missing calendar days in the window are drawn as 0, not interpolated. If the daily series is shorter than the window, the **total** is **—** (no extrapolation). 30d may fall back to DefiLlama `total30d` when the chart is missing.
+- 30/60/90-day totals **and daily bar charts**: sum / plot `totalDataChart`. Missing calendar days in the window are 0, not interpolated. If the daily series is shorter than the window, the **total** is **—**. 30d may fall back to DefiLlama `total30d` when the chart is missing.
+- **全部**: sum the full available daily series. Bars plot every calendar day in that span; if there are more than 160 days, bars are **weekly sums** (documented on the chart).
+- stonk.fun: fees chart exists (`summary/fees/stonkfun`); **no** DEX volume adapter (`summary/dexs/stonkfun` 400). GeckoTerminal has no stonkfun Solana DEX; DexScreener hits are unrelated pools. Volume stays — with that reason on the card.
 - Top-5 sample: GeckoTerminal `https://api.geckoterminal.com/api/v2/networks/{network}/dexes/{dex}/pools`
 - Dune boards are cited as **reference links only**. Live numbers do not come from Dune unless you later wire `DUNE_API_KEY`.
 
@@ -95,7 +98,7 @@ DUNE_API_KEY=   # unused by the live fetch path; dashboard links still render
 - **DefiLlama protocol TVL ≠ rwa.xyz issuer AUM.** Numbers will diverge. xStocks’ DefiLlama *RWA platform* On-chain AUM may also sit above the protocol endpoint used here for automation.
 - Binance, Reality, Robinhood’s equity book, and Backpack Securities are **not invented** when no free live feed exists. They appear only on the static tweet-snapshot card (2026-09-06).
 - Live HHI is computed only on issuers we can fetch. It is often *more* concentrated than the rwa.xyz-style chart that includes those missing books.
-- Per-ticker history is only as complete as DefiLlama `tokensInUsd`. Gaps are 「其他」, never fabricated stock series.
+- Per-ticker history is only as complete as DefiLlama `tokensInUsd`. Same-day intra-day snapshots are **not** added together. Gaps and non-equity tokens are 「其他」, never fabricated stock series. CRCL in the stock stack is tokenized Circle **equity**, not USDC/USYC.
 - `RWA_XYZ_API_KEY` in `.env.example` is an unused stub for a future paid upgrade.
 
 ## Deploy on Vercel

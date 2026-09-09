@@ -4,10 +4,14 @@ import type { SeriesPoint } from "./types";
 
 export const UNMAPPED_TICKER_SLUG = "__unmapped";
 
-export const TICKER_Y_AXIS_ZH = "DefiLlama tokensInUsd 按标的股票合计（USD）";
-export const TICKER_Y_AXIS_EN = "DefiLlama tokensInUsd by underlying ticker (USD)";
+export const TICKER_Y_AXIS_ZH = "DefiLlama 协议 TVL，按标的股票拆分（USD）";
+export const TICKER_Y_AXIS_EN = "Same issuer TVL restacked by underlying ticker (USD)";
 export const TICKER_RANKING_RULE_ZH =
-  "Top 10 标的按最新一日已映射 tokensInUsd 市占一次性固定；现金（USD / USDT / USDC / USD+ 等）与无法映射的代币、以及仅有协议 TVL、没有 tokensInUsd 的发行方/日期，一律计入「其他」。Ondo 去掉 ON 后缀，xStocks 去掉 X 后缀，BackedFi 去掉 b 前缀。不用发行方合计编造个股序列。";
+  "与按发行方同一批协议、同一日 TVL 合计。Top 10 按最新一日已映射个股市占锁定；现金 / 收益稳定币 / 债券及无法映射的代币计入「其他」。每个 UTC 日只取 tokensInUsd 最后一次观测，不把盘中快照加到日柱上。Ondo 去 ON，xStocks 去 X，BackedFi 去 B。CRCL = NYSE 股票代币（CRCLON/CRCLX），不是 USDC/USYC。";
+
+export const TICKER_NOTES: Record<string, string> = {
+  CRCL: "Circle Internet Group（NYSE:CRCL）股票代币，来自 CRCLON / CRCLX，不是 USDC 或 Circle USYC。",
+};
 
 const TICKER_COLORS = [
   "#fb7185",
@@ -22,6 +26,32 @@ const TICKER_COLORS = [
   "#818cf8",
 ];
 
+const CASH_OR_YIELD = new Set([
+  "USDT",
+  "USDC",
+  "DAI",
+  "USD",
+  "USYC",
+  "USDG",
+  "USDS",
+  "USDE",
+  "USDY",
+  "USDP",
+  "PYUSD",
+  "FDUSD",
+  "TUSD",
+  "GUSD",
+  "RLUSD",
+  "EURC",
+  "OUSG",
+  "OUSD",
+  "BUIDL",
+  "TBILL",
+  "USTB",
+  "USDON",
+  "USDPLUS",
+]);
+
 function dayKey(timestamp: number): number {
   return Math.floor(timestamp / DAY) * DAY;
 }
@@ -32,28 +62,52 @@ function tickerColor(ticker: string): string {
   return TICKER_COLORS[hash % TICKER_COLORS.length];
 }
 
+function isCashOrYield(symbol: string): boolean {
+  if (CASH_OR_YIELD.has(symbol)) return true;
+  if (symbol.startsWith("USD") || symbol.includes("USD")) return true;
+  if (symbol.startsWith("OUSG") || symbol.includes("USYC")) return true;
+  return false;
+}
+
+function looksLikeBondOrNote(symbol: string): boolean {
+  return /\d/.test(symbol);
+}
+
 /**
- * Map protocol token symbols onto TradFi tickers.
- * Cash / unknown → null (folded into 「其他」, never invented from issuer TVL).
+ * Map protocol token symbols onto TradFi equity/ETF tickers.
+ * Cash, Circle yield (USYC), T-bills, and unknown → null (「其他」).
+ * Issuer-scoped suffixes so MUON → MU and CRCLON → CRCL, while USYC never becomes a stock.
  */
-export function underlyingTicker(symbol: string): string | null {
+export function underlyingTicker(symbol: string, issuerSlug?: string): string | null {
   const s = symbol.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (!s) return null;
-  if (s === "USDT" || s === "USDC" || s === "DAI" || s === "USD" || s.startsWith("USD")) return null;
-  if (s.endsWith("ON") && s.length >= 5) {
-    const core = s.slice(0, -2);
-    if (/^[A-Z]{1,5}$/.test(core)) return core;
+  if (!s || isCashOrYield(s)) return null;
+
+  let core: string | null = null;
+  if (!issuerSlug || issuerSlug === "ondo-global-markets") {
+    if (s.endsWith("ON") && s.length >= 4) {
+      const stripped = s.slice(0, -2);
+      if (/^[A-Z]{1,5}$/.test(stripped)) core = stripped;
+    }
   }
-  if (s.endsWith("X") && s.length >= 4 && s.length <= 6) {
-    const core = s.slice(0, -1);
-    if (/^[A-Z]{1,5}$/.test(core)) return core;
+  if (!core && (!issuerSlug || issuerSlug === "xstocks")) {
+    if (s.endsWith("X") && s.length >= 4 && s.length <= 6) {
+      const stripped = s.slice(0, -1);
+      if (/^[A-Z]{1,5}$/.test(stripped)) core = stripped;
+    }
   }
-  if (s.startsWith("B") && s.length >= 5 && s.length <= 7) {
-    const core = s.slice(1);
-    if (/^[A-Z]{2,5}$/.test(core)) return core;
+  if (!core && issuerSlug === "backedfi") {
+    if (s.startsWith("B") && s.length >= 5 && s.length <= 7) {
+      const stripped = s.slice(1);
+      if (/^[A-Z]{2,5}$/.test(stripped)) core = stripped;
+    }
   }
-  if (/^[A-Z]{1,5}$/.test(s)) return s;
-  return null;
+  if (!core && issuerSlug && issuerSlug !== "ondo-global-markets" && issuerSlug !== "xstocks" && issuerSlug !== "backedfi") {
+    if (/^[A-Z]{1,5}$/.test(s)) core = s;
+  }
+  if (!core && !issuerSlug && /^[A-Z]{1,5}$/.test(s)) core = s;
+
+  if (!core || isCashOrYield(core) || looksLikeBondOrNote(core)) return null;
+  return core;
 }
 
 export type TickerNamedSeries = {
@@ -77,50 +131,43 @@ export function collectTickerSeries(
       if (!Number.isFinite(point.totalLiquidityUSD)) continue;
       tvlDays.set(dayKey(point.date), point.totalLiquidityUSD);
     }
-    const tokenDays = issuer.detail?.tokensInUsd ?? [];
-    const covered = new Set<number>();
-    let mappedUsd = 0;
-    let unmappedUsd = 0;
 
-    for (const row of tokenDays) {
-      const day = dayKey(row.date);
-      covered.add(day);
-      const tokens = row.tokens ?? {};
-      let daySum = 0;
+    const tokenByDay = new Map<number, Record<string, number>>();
+    for (const row of issuer.detail?.tokensInUsd ?? []) {
+      tokenByDay.set(dayKey(row.date), row.tokens ?? {});
+    }
+
+    let mappedUsd = 0;
+    let otherUsd = 0;
+
+    const days = new Set([...tvlDays.keys(), ...tokenByDay.keys()]);
+    for (const day of days) {
+      const tokens = tokenByDay.get(day) ?? {};
+      let mappedDay = 0;
       for (const [symbol, usd] of Object.entries(tokens)) {
         if (!Number.isFinite(usd) || usd <= 0) continue;
-        daySum += usd;
-        const ticker = underlyingTicker(symbol);
-        if (!ticker) {
-          unmapped.set(day, (unmapped.get(day) ?? 0) + usd);
-          unmappedUsd += usd;
-          continue;
-        }
+        const ticker = underlyingTicker(symbol, issuer.slug);
+        if (!ticker) continue;
         if (!byTicker.has(ticker)) byTicker.set(ticker, new Map());
         const map = byTicker.get(ticker)!;
         map.set(day, (map.get(day) ?? 0) + usd);
+        mappedDay += usd;
         mappedUsd += usd;
       }
       const tvl = tvlDays.get(day);
-      if (tvl != null && tvl > daySum + 1) {
-        const gap = tvl - daySum;
-        unmapped.set(day, (unmapped.get(day) ?? 0) + gap);
-        unmappedUsd += gap;
+      const budget = tvl != null ? tvl : mappedDay;
+      const other = Math.max(0, budget - mappedDay);
+      if (other > 0) {
+        unmapped.set(day, (unmapped.get(day) ?? 0) + other);
+        otherUsd += other;
       }
     }
 
-    for (const [day, tvl] of tvlDays) {
-      if (!covered.has(day)) {
-        unmapped.set(day, (unmapped.get(day) ?? 0) + tvl);
-        unmappedUsd += tvl;
-      }
-    }
-
-    if (!tokenDays.length && tvlDays.size) {
+    if (!tokenByDay.size && tvlDays.size) {
       notesZh.push(`${issuer.displayName}：无 tokensInUsd，协议 TVL 计入「其他」`);
-    } else if (mappedUsd === 0 && unmappedUsd > 0) {
+    } else if (mappedUsd === 0 && otherUsd > 0) {
       notesZh.push(
-        `${issuer.displayName}：tokensInUsd 无法映射为股票代码（如 USD+ / USDT），计入「其他」`,
+        `${issuer.displayName}：tokensInUsd 无法映射为股票代码（如 USD+ / USDT / USYC），计入「其他」`,
       );
     }
   }
@@ -138,8 +185,8 @@ export function collectTickerSeries(
   if (unmapped.size) {
     series.push({
       slug: UNMAPPED_TICKER_SLUG,
-      displayName: "未映射",
-      shortName: "未映射",
+      displayName: "其他",
+      shortName: "其他",
       color: "#64748b",
       points: [...unmapped.entries()]
         .sort((a, b) => a[0] - b[0])

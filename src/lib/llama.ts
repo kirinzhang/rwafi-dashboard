@@ -67,6 +67,8 @@ export type PeggedAsset = {
   name: string;
   symbol: string;
   pegMechanism?: string;
+  pegType?: string;
+  price?: number | null;
   circulating?: Record<string, number>;
   circulatingPrevDay?: Record<string, number>;
   circulatingPrevWeek?: Record<string, number>;

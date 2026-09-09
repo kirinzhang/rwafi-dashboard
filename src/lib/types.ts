@@ -15,6 +15,7 @@ export type StackedIssuanceSeries = {
   shortName: string;
   color: string;
   latestUsd: number;
+  noteZh?: string;
 };
 
 export type StackedIssuancePoint = {
@@ -76,14 +77,18 @@ export type StablecoinRow = {
   name: string;
   symbol: string;
   circulatingUsd: number;
+  sharePct: number;
+  price: number | null;
   change: ChangeSet;
   pegMechanism: string | null;
+  pegType: string | null;
   chains: string[];
 };
 
 export type ChainStableRow = {
   name: string;
   circulatingUsd: number;
+  sharePct: number;
   highlighted: boolean;
   change: ChangeSet;
 };
@@ -115,6 +120,10 @@ export type StablesPayload = {
     byChain: ChainStableRow[];
     globalHistory: SeriesPoint[];
     rhHistory: SeriesPoint[];
+    totalUsd: number;
+    usdtUsd: number;
+    usdtDominancePct: number | null;
+    assetCount: number;
   };
   sources: {
     endpoints: { name: string; url: string; noteZh: string }[];

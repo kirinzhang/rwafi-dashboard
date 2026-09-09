@@ -13,21 +13,35 @@ import {
 import { formatUsd } from "@/lib/format";
 import type { LaunchpadCard, RangeKey } from "@/lib/launchpad-types";
 import { RANGE_OPTIONS } from "@/lib/launchpad-types";
-import { barsForWindow, pickMissing, pickRange } from "@/lib/launchpad-windows";
+import { barsForFullSeries, barsForWindow, pickMissing, pickRange } from "@/lib/launchpad-windows";
 import { BarChart3, Landmark, Receipt, Trophy, Users } from "lucide-react";
 import { DuneBarChart } from "./dune-bar-chart";
 import { MetricKpi } from "./metric-kpi";
 
 export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: RangeKey }) {
   const days = RANGE_OPTIONS.find((item) => item.key === range)?.days ?? 30;
-  const volumeBars = pad.volume.series.length ? barsForWindow(pad.volume.series, days) : [];
-  const feeEnd = Math.max(pad.grossFees.series.at(-1)?.t ?? 0, pad.protocolRevenue.series.at(-1)?.t ?? 0) || undefined;
-  const feeBars =
-    pad.grossFees.series.length && feeEnd ? barsForWindow(pad.grossFees.series, days, feeEnd) : [];
-  const revenueBars =
-    pad.protocolRevenue.series.length && feeEnd
-      ? barsForWindow(pad.protocolRevenue.series, days, feeEnd)
+  const isAll = range === "all";
+  const volumeFull = isAll ? barsForFullSeries(pad.volume.series) : null;
+  const feeFull = isAll ? barsForFullSeries(pad.grossFees.series) : null;
+  const revenueFull = isAll ? barsForFullSeries(pad.protocolRevenue.series) : null;
+  const volumeBars = isAll
+    ? (volumeFull?.points ?? [])
+    : pad.volume.series.length
+      ? barsForWindow(pad.volume.series, days)
       : [];
+  const feeEnd = Math.max(pad.grossFees.series.at(-1)?.t ?? 0, pad.protocolRevenue.series.at(-1)?.t ?? 0) || undefined;
+  const feeBars = isAll
+    ? (feeFull?.points ?? [])
+    : pad.grossFees.series.length && feeEnd
+      ? barsForWindow(pad.grossFees.series, days, feeEnd)
+      : [];
+  const revenueSource = isAll ? (revenueFull?.points ?? []) : pad.protocolRevenue.series.length && feeEnd
+    ? barsForWindow(pad.protocolRevenue.series, days, feeEnd)
+    : [];
+  const revenueByT = new Map(revenueSource.map((p) => [p.t, p.v]));
+  const revenueBars = feeBars.map((p) => ({ t: p.t, v: revenueByT.get(p.t) ?? 0 }));
+  const chartDays = isAll ? Math.max(volumeBars.length, feeBars.length, 1) : days;
+  const grainNote = isAll ? volumeFull?.note ?? feeFull?.note ?? null : null;
 
   return (
     <Card className="border-white/5 bg-card/80">
@@ -106,7 +120,8 @@ export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: R
           title="日成交量"
           total={pickRange(pad.volume, range)}
           missing={pickMissing(pad.volume, range)}
-          days={days}
+          days={chartDays}
+          grainNote={grainNote}
           series={
             volumeBars.length
               ? [{ key: "volume", label: "成交量", color: pad.color, points: volumeBars }]
@@ -117,7 +132,8 @@ export function LaunchpadCardView({ pad, range }: { pad: LaunchpadCard; range: R
           title="日毛手续费 / 协议收入"
           total={pickRange(pad.grossFees, range)}
           missing={pickMissing(pad.grossFees, range)}
-          days={days}
+          days={chartDays}
+          grainNote={isAll ? feeFull?.note ?? null : null}
           series={
             feeBars.length
               ? [

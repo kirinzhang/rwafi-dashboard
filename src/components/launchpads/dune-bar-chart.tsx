@@ -22,6 +22,7 @@ export function DuneBarChart({
   days,
   series,
   height = 220,
+  grainNote = null,
 }: {
   title: string;
   total: number | null;
@@ -29,6 +30,7 @@ export function DuneBarChart({
   days: number;
   series: Series[];
   height?: number;
+  grainNote?: string | null;
 }) {
   const hasPoints = series.some((s) => s.points.length > 0);
   const data = hasPoints
@@ -41,7 +43,7 @@ export function DuneBarChart({
       })
     : [];
 
-  const barSize = days >= 90 ? 3 : days >= 60 ? 5 : 8;
+  const barSize = days >= 120 ? 2 : days >= 90 ? 3 : days >= 60 ? 5 : 8;
 
   return (
     <div className="rounded-xl border border-white/8 bg-[#0b0f19] p-3">
@@ -51,6 +53,9 @@ export function DuneBarChart({
           <div className="text-lg font-semibold tabular-nums text-foreground">{formatUsd(total)}</div>
         </div>
         {missing ? <p className="max-w-sm text-right text-[11px] text-amber-200/80">— {missing}</p> : null}
+        {grainNote && !missing ? (
+          <p className="max-w-sm text-right text-[11px] text-muted-foreground">{grainNote}</p>
+        ) : null}
       </div>
       {!hasPoints ? (
         <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">

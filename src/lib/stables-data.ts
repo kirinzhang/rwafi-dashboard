@@ -80,7 +80,16 @@ function emptyPayload(fetchedAt: string, warnings: string[], error: string | nul
         live: false,
       }),
     },
-    stables: { top: [], byChain: [], globalHistory: [], rhHistory: [] },
+    stables: {
+      top: [],
+      byChain: [],
+      globalHistory: [],
+      rhHistory: [],
+      totalUsd: 0,
+      usdtUsd: 0,
+      usdtDominancePct: null,
+      assetCount: 0,
+    },
     sources: { endpoints: SOURCE_ENDPOINTS, rwaXyzConfigured: isRwaXyzConfigured() },
   };
 }
@@ -115,7 +124,9 @@ export async function getStablesData(): Promise<StablesPayload> {
     const globalHistory = chartToSeries(chartsAll);
     const rhHistory = chartToSeries(chartsRh);
     const pegged = stables?.peggedAssets ?? [];
-    const top: StablecoinRow[] = pegged
+    const usdPegged = pegged.filter((asset) => (asset.pegType ?? "peggedUSD") === "peggedUSD");
+    const globalUsd = usdPegged.reduce((sum, asset) => sum + usdFromPegged(asset.circulating), 0);
+    const top: StablecoinRow[] = usdPegged
       .map((asset) => {
         const current = usdFromPegged(asset.circulating);
         return {
@@ -123,23 +134,28 @@ export async function getStablesData(): Promise<StablesPayload> {
           name: asset.name,
           symbol: asset.symbol,
           circulatingUsd: current,
+          sharePct: globalUsd > 0 ? (current / globalUsd) * 100 : 0,
+          price: typeof asset.price === "number" && Number.isFinite(asset.price) ? asset.price : null,
           change: {
             d1: pctChange(current, usdFromPegged(asset.circulatingPrevDay)),
             d7: pctChange(current, usdFromPegged(asset.circulatingPrevWeek)),
             d30: pctChange(current, usdFromPegged(asset.circulatingPrevMonth)),
           },
           pegMechanism: asset.pegMechanism ?? null,
+          pegType: asset.pegType ?? null,
           chains: asset.chains ?? [],
         };
       })
       .filter((row) => row.circulatingUsd > 0)
       .sort((a, b) => b.circulatingUsd - a.circulatingUsd)
-      .slice(0, 12);
+      .slice(0, 25);
 
-    const globalUsd = pegged.reduce((sum, asset) => sum + usdFromPegged(asset.circulating), 0);
-    const globalPrev1 = pegged.reduce((sum, asset) => sum + usdFromPegged(asset.circulatingPrevDay), 0);
-    const globalPrev7 = pegged.reduce((sum, asset) => sum + usdFromPegged(asset.circulatingPrevWeek), 0);
-    const globalPrev30 = pegged.reduce((sum, asset) => sum + usdFromPegged(asset.circulatingPrevMonth), 0);
+    const usdtUsd = usdFromPegged(usdPegged.find((a) => a.symbol.toUpperCase() === "USDT")?.circulating);
+    const usdtDominancePct = globalUsd > 0 ? (usdtUsd / globalUsd) * 100 : null;
+
+    const globalPrev1 = usdPegged.reduce((sum, asset) => sum + usdFromPegged(asset.circulatingPrevDay), 0);
+    const globalPrev7 = usdPegged.reduce((sum, asset) => sum + usdFromPegged(asset.circulatingPrevWeek), 0);
+    const globalPrev30 = usdPegged.reduce((sum, asset) => sum + usdFromPegged(asset.circulatingPrevMonth), 0);
 
     const chainRowsRaw = (stableChains ?? []).map((row) => ({
       name: row.name,
@@ -153,10 +169,11 @@ export async function getStablesData(): Promise<StablesPayload> {
     const byChain: ChainStableRow[] = [];
     const sortedChains = [...chainRowsRaw].sort((a, b) => b.circulatingUsd - a.circulatingUsd);
     const seen = new Set<string>();
-    for (const row of sortedChains.slice(0, 10)) {
+    for (const row of sortedChains.slice(0, 12)) {
       byChain.push({
         name: row.name,
         circulatingUsd: row.circulatingUsd,
+        sharePct: globalUsd > 0 ? (row.circulatingUsd / globalUsd) * 100 : 0,
         highlighted: highlighted.has(row.name),
         change: emptyChange(),
       });
@@ -168,6 +185,7 @@ export async function getStablesData(): Promise<StablesPayload> {
       byChain.push({
         name,
         circulatingUsd: found?.circulatingUsd ?? 0,
+        sharePct: globalUsd > 0 ? ((found?.circulatingUsd ?? 0) / globalUsd) * 100 : 0,
         highlighted: true,
         change: emptyChange(),
       });
@@ -184,6 +202,10 @@ export async function getStablesData(): Promise<StablesPayload> {
       byChain,
       globalHistory: lastDays(globalHistory, 800),
       rhHistory,
+      totalUsd: globalUsd,
+      usdtUsd,
+      usdtDominancePct,
+      assetCount: usdPegged.filter((a) => usdFromPegged(a.circulating) > 0).length,
     };
     payload.kpis.globalStables = {
       key: "global-stables",

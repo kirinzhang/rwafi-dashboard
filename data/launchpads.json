@@ -86,7 +86,7 @@
       "volumeSlugs": [],
       "volumeChainKey": "solana",
       "geckoDexes": [],
-      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）— Solana 发射台，不是 RH 的 StonkBrokers。毛手续费与协议收入口径相同（Raydium CLMM Burn & Earn 平台份额）。无 DEX volume 适配器；无独立 GeckoTerminal DEX，Top5 暂缺。"
+      "noteZh": "DefiLlama slug stonkfun（StonkFun，站点 stonkfun.xyz）— Solana 发射台，不是 RH 的 StonkBrokers / sTONks。毛手续费 = Raydium CLMM Burn & Earn 平台分成（有日频）。成交量：Llama dexs、GeckoTerminal DEX、DexScreener 均无可用发射台序列，故为 —，不把费用当成交量。"
     },
     {
       "id": "pump-fun",

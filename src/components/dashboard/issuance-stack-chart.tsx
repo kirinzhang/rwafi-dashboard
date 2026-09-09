@@ -42,7 +42,14 @@ export function IssuanceStackChart({
   const [range, setRange] = useState<RangeKey>("90d");
   const [dimension, setDimension] = useState<Dimension>("issuer");
   const history = dimension === "issuer" ? issuerHistory : tickerHistory;
+  const issuerTotal = issuerHistory.points.at(-1)?.total ?? null;
   const latestTotal = history.points.at(-1)?.total ?? null;
+  const totalsDiverge =
+    dimension === "stock" &&
+    issuerTotal != null &&
+    latestTotal != null &&
+    issuerTotal > 0 &&
+    Math.abs(latestTotal - issuerTotal) / issuerTotal > 0.02;
   const hasMappedSeries = history.series.some((item) => item.key !== OTHER_STACK_KEY);
   const showEmptyStock = dimension === "stock" && !hasMappedSeries;
 
@@ -86,10 +93,14 @@ export function IssuanceStackChart({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-muted-foreground">
-              {dimension === "issuer" ? "最新合计" : "最新已观测合计"}
-            </div>
+            <div className="text-xs text-muted-foreground">最新合计</div>
             <div className="text-lg font-semibold tabular-nums">{formatUsd(latestTotal)}</div>
+            {dimension === "stock" && issuerTotal != null ? (
+              <div className="text-[11px] text-muted-foreground">
+                按发行方 {formatUsd(issuerTotal)}
+                {totalsDiverge ? " · 偏差已标出" : " · 已对齐"}
+              </div>
+            ) : null}
           </div>
         </div>
       </CardHeader>
@@ -159,14 +170,21 @@ export function IssuanceStackChart({
                           {history.series.map((item) => {
                             const value = byKey.get(item.key) ?? 0;
                             return (
-                              <div key={item.key} className="flex items-center justify-between gap-4">
-                                <span style={{ color: item.color }}>{item.shortName}</span>
-                                <span className="tabular-nums text-foreground">
-                                  {formatUsd(value)}{" "}
-                                  <span className="text-muted-foreground">
-                                    {formatShare(total > 0 ? (value / total) * 100 : 0)}
+                              <div key={item.key} className="space-y-0.5">
+                                <div className="flex items-center justify-between gap-4">
+                                  <span style={{ color: item.color }}>{item.shortName}</span>
+                                  <span className="tabular-nums text-foreground">
+                                    {formatUsd(value)}{" "}
+                                    <span className="text-muted-foreground">
+                                      {formatShare(total > 0 ? (value / total) * 100 : 0)}
+                                    </span>
                                   </span>
-                                </span>
+                                </div>
+                                {item.noteZh ? (
+                                  <div className="text-[10px] leading-snug text-muted-foreground">
+                                    {item.noteZh}
+                                  </div>
+                                ) : null}
                               </div>
                             );
                           })}
@@ -206,9 +224,9 @@ export function IssuanceStackChart({
             </>
           ) : (
             <>
-              「按股票」= 同一批发行方 DefiLlama <code className="text-foreground/80">tokensInUsd[]</code>{" "}
-              的代币 USD，映射到 TradFi ticker 后加总。数据源不是 rwa.xyz。无 ticker
-              拆分的发行方/日期进入「其他」，不会把发行方 TVL 按比例拆成 AAPL / TSLA。
+              「按股票」把同一批发行方、同一日的协议 TVL 按 tokensInUsd 拆到 TradFi ticker。每日只取最后一次观测，避免盘中快照叠到日柱上造成假跳升。现金（USDON / USDT / USDC）、Circle
+              USYC 等收益稳定币、债券不进入个股段。CRCL 是 NYSE 股票代币（Ondo CRCLON、xStocks CRCLX），不是
+              Circle 稳定币。未映射残余进「其他」，所以合计应与按发行方一致。
             </>
           )}{" "}
           「全部」为每周最后一次观测的存量快照（不是周加总）。
