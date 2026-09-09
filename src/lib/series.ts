@@ -182,6 +182,17 @@ export function buildStackedIssuance(
   return { series, points };
 }
 
+export function weeklyLastSnapshot<T extends { date: number }>(points: T[]): T[] {
+  const WEEK = 7 * DAY;
+  const buckets = new Map<number, T>();
+  for (const point of points) {
+    const week = Math.floor(point.date / WEEK) * WEEK;
+    const prev = buckets.get(week);
+    if (!prev || point.date >= prev.date) buckets.set(week, point);
+  }
+  return [...buckets.values()].sort((a, b) => a.date - b.date);
+}
+
 export function usdFromPegged(
   bag: Record<string, number> | null | undefined,
   key = "peggedUSD",

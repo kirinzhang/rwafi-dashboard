@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatShare, formatShanghaiDate, formatUsd } from "@/lib/format";
+import { weeklyLastSnapshot } from "@/lib/series";
 import type { StackedIssuanceHistory } from "@/lib/types";
 import { useMemo, useState } from "react";
 import {
@@ -32,19 +33,18 @@ export function IssuanceStackChart({ history }: { history: StackedIssuanceHistor
   const data = useMemo(() => {
     const selected = RANGES.find((item) => item.key === range);
     const end = history.points.at(-1)?.date;
-    const cutoff =
-      selected?.days && end != null ? end - selected.days * 86400 : 0;
-    return history.points
-      .filter((p) => p.date > cutoff)
-      .map((p) => ({
-        date: p.date,
-        ms: p.date * 1000,
-        total: p.total,
-        ...p.values,
-      }));
+    const cutoff = selected?.days && end != null ? end - selected.days * 86400 : 0;
+    const sliced = history.points.filter((p) => p.date > cutoff);
+    const grain = range === "all" ? weeklyLastSnapshot(sliced) : sliced;
+    return grain.map((p) => ({
+      date: p.date,
+      ms: p.date * 1000,
+      total: p.total,
+      ...p.values,
+    }));
   }, [history.points, range]);
 
-  const barSize = range === "all" ? 2 : range === "90d" ? 4 : range === "60d" ? 6 : 8;
+  const barSize = range === "all" ? 5 : range === "90d" ? 4 : range === "60d" ? 6 : 8;
 
   return (
     <Card className="border-white/5 bg-card/80">
@@ -163,6 +163,7 @@ export function IssuanceStackChart({ history }: { history: StackedIssuanceHistor
           的 <code className="text-foreground/80">totalLiquidityUSD</code>
           ，用作代币化美股 AUM 代理，不是托管账本或 rwa.xyz 发行方 AUM。日期为各协议有观测的 UTC
           日并集；某发行方当天无点记 0，不插值。图例按最新一日市占锁定，避免每日重排闪烁。
+          「全部」为每周最后一次观测的存量快照（不是周 TVL 加总），以免八百根日柱糊成面积图。
           {history.missingLiveZh.length ? ` 未进柱：${history.missingLiveZh.join("；")}。` : null}
         </p>
       </CardContent>
