@@ -1,0 +1,165 @@
+{
+  "duneBoards": [
+    {
+      "title": "OKX Web3 — Robinhood Chain launchpads",
+      "url": "https://dune.com/okxweb3wallet/robinhood-chain-launchpads-rwa-paired-meme-analysis",
+      "noteZh": "RH 发射台成交量等分析看板；本页实时数走 DefiLlama，不解析 Dune 私有查询。"
+    },
+    {
+      "title": "Four.meme vs Pump.fun",
+      "url": "https://dune.com/counterparty_research/fourmeme-vs-pumpfun",
+      "noteZh": "对照看板，非本页主数据源。"
+    },
+    {
+      "title": "Pump.fun analytics (jcruz)",
+      "url": "https://dune.com/jcruz/pump-fun-analytics",
+      "noteZh": "Pump.fun 社区分析。"
+    },
+    {
+      "title": "KuCoin Ventures — Four",
+      "url": "https://dune.com/kucoinventures/four",
+      "noteZh": "four.meme 相关 Dune 看板。"
+    }
+  ],
+  "chains": [
+    {
+      "id": "robinhood",
+      "name": "Robinhood Chain",
+      "shortName": "RH Chain",
+      "color": "#f97316"
+    },
+    {
+      "id": "solana",
+      "name": "Solana",
+      "shortName": "Solana",
+      "color": "#14f195"
+    },
+    {
+      "id": "bsc",
+      "name": "BNB Chain",
+      "shortName": "BSC",
+      "color": "#f0b90b"
+    }
+  ],
+  "launchpads": [
+    {
+      "id": "pons",
+      "displayName": "Pons",
+      "chainId": "robinhood",
+      "primary": true,
+      "color": "#fb7185",
+      "url": "https://www.ponsfamily.com/launchpad",
+      "defillamaUrl": "https://defillama.com/protocol/pons-v2",
+      "feeSlugs": ["pons-v2", "pons-v1"],
+      "volumeSlugs": ["pons-v2"],
+      "volumeChainKey": "robinhood",
+      "geckoDexes": [
+        { "network": "robinhood", "dex": "pons-v2" },
+        { "network": "robinhood", "dex": "pons-v2-dex" },
+        { "network": "robinhood", "dex": "pons-dot-family" }
+      ],
+      "noteZh": "毛手续费 = DefiLlama dailyFees（V1+V2 加总）。协议收入 = dailyRevenue（V1+V2）。创作者/供给侧 ≈ 毛费 − 协议收入（V2 methodology：SupplySideRevenue 含创作者分成、可选税与回购）。成交量目前只有 Pons V2 的 DEX 适配器；V1 成交量显示为不可用。"
+    },
+    {
+      "id": "stonkbrokers",
+      "displayName": "StonkBrokers",
+      "chainId": "robinhood",
+      "primary": true,
+      "color": "#fbbf24",
+      "url": "https://www.stonkbrokers.cash",
+      "defillamaUrl": "https://defillama.com/protocol/stonkbrokers",
+      "feeSlugs": ["stonkbrokers"],
+      "volumeSlugs": ["stonkbrokers"],
+      "volumeChainKey": "robinhood",
+      "geckoDexes": [],
+      "noteZh": "Stonk / Stonklauncher / StonkBrokers 套件。GeckoTerminal 没有独立 Stonk DEX id，Top5 市值暂缺。费用含 NFT AMM、Safe Launch 税与曲线费，口径比单纯 meme 发射台更宽。"
+    },
+    {
+      "id": "noxa-fun",
+      "displayName": "NOXA Fun",
+      "chainId": "robinhood",
+      "primary": false,
+      "color": "#a78bfa",
+      "url": "https://fun.noxa.eth.limo/",
+      "defillamaUrl": "https://defillama.com/protocol/noxa-fun",
+      "feeSlugs": ["noxa-fun"],
+      "volumeSlugs": [],
+      "volumeChainKey": "robinhood",
+      "geckoDexes": [],
+      "noteZh": "24h 费用几乎全部在 Robinhood Chain。DefiLlama 写明 Revenue 适配器暂未启用，手续费归 token 创作者，故协议收入为 0。无独立 DEX volume 适配器。"
+    },
+    {
+      "id": "pump-fun",
+      "displayName": "pump.fun",
+      "chainId": "solana",
+      "primary": true,
+      "color": "#34d399",
+      "url": "https://www.pump.fun/",
+      "defillamaUrl": "https://defillama.com/protocol/pump.fun",
+      "feeSlugs": ["pump.fun"],
+      "volumeSlugs": ["pump.fun"],
+      "volumeChainKey": "solana",
+      "geckoDexes": [
+        { "network": "solana", "dex": "pumpswap" },
+        { "network": "solana", "dex": "pump-fun" }
+      ],
+      "noteZh": "成交量/费用仅为 pump.fun 发射台（bonding curve），不含 PumpSwap 现货。Top5 混合 GeckoTerminal 的 pump-fun 曲线池 + PumpSwap 毕业盘，按 FDV 排序，是样本而非全历史市值榜。"
+    },
+    {
+      "id": "letsbonk",
+      "displayName": "BONK.fun / LetsBonk",
+      "chainId": "solana",
+      "primary": false,
+      "color": "#f59e0b",
+      "url": "https://letsbonk.fun",
+      "defillamaUrl": "https://defillama.com/protocol/bonk.fun-launchpad",
+      "feeSlugs": ["bonk.fun-launchpad"],
+      "volumeSlugs": [],
+      "volumeChainKey": "solana",
+      "geckoDexes": [],
+      "noteZh": "DefiLlama slug bonk.fun-launchpad（LetsBonk 模块）。有费用/收入，暂无 DEX volume 适配器。Top5 无独立 Gecko DEX。"
+    },
+    {
+      "id": "bags",
+      "displayName": "Bags",
+      "chainId": "solana",
+      "primary": false,
+      "color": "#38bdf8",
+      "url": "https://bags.fm/",
+      "defillamaUrl": "https://defillama.com/protocol/bags",
+      "feeSlugs": ["bags"],
+      "volumeSlugs": [],
+      "volumeChainKey": "solana",
+      "geckoDexes": [{ "network": "solana", "dex": "bags-fm" }],
+      "noteZh": "费用含 Solana + Robinhood Chain。展示协议合计；24h 链拆分见卡片脚注。无 DEX volume 适配器。"
+    },
+    {
+      "id": "four-meme",
+      "displayName": "four.meme",
+      "chainId": "bsc",
+      "primary": true,
+      "color": "#f0b90b",
+      "url": "https://four.meme",
+      "defillamaUrl": "https://defillama.com/protocol/four.meme",
+      "feeSlugs": ["four.meme"],
+      "volumeSlugs": ["four.meme"],
+      "volumeChainKey": "bsc",
+      "geckoDexes": [{ "network": "bsc", "dex": "four-meme" }],
+      "noteZh": "毛手续费 = 发射/交易用户费；协议收入 = four.meme 留存。Top5 为 Four.meme DEX 当前池样本（多为曲线盘，毕业后在 Pancake 的大市值代币不一定出现）。"
+    },
+    {
+      "id": "flap-sh",
+      "displayName": "Flap.sh",
+      "chainId": "bsc",
+      "primary": false,
+      "color": "#22d3ee",
+      "url": "https://flap.sh/board",
+      "defillamaUrl": "https://defillama.com/protocol/flap-sh",
+      "feeSlugs": ["flap-sh"],
+      "volumeSlugs": ["flap-sh"],
+      "volumeChainKey": "bsc",
+      "geckoDexes": [],
+      "noteZh": "多链发射台。24h 成交量/费用尽量用 BSC 拆分；7d/30d 为协议合计（含 X Layer / Monad / RH）。GeckoTerminal 无独立 Flap DEX，Top5 暂缺。"
+    }
+  ]
+}

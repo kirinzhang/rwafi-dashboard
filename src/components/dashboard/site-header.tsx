@@ -5,10 +5,14 @@ import { formatShanghai } from "@/lib/format";
 import { Activity, RefreshCw } from "lucide-react";
 
 export function SiteHeader({
+  title,
+  subtitle,
   fetchedAt,
   refreshing,
   onRefresh,
 }: {
+  title: string;
+  subtitle: string;
   fetchedAt: string;
   refreshing: boolean;
   onRefresh: () => void;
@@ -21,10 +25,8 @@ export function SiteHeader({
           <Badge variant="secondary">Equity Token Radar</Badge>
           <Badge variant="outline">免费数据 · 无 API Key</Badge>
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">代币化美股 &amp; 稳定币看板</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          追踪代币化美股协议 TVL 与稳定币发行。Robinhood Chain 夏天看股权代币 AUM，而不是发射台市值。
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">{subtitle}</p>
       </div>
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <div>

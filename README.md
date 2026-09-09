@@ -13,6 +13,9 @@ Live monitoring dashboard for **tokenized US equity AUM** (DefiLlama protocol TV
 | Tweet snapshot | 2026-09-06 截图数字（Ondo / Backed / Binance / Reality / Robinhood / Backpack / Dinari / Others，合计约 $2.94B）仅作对照，**不当作实时数据** |
 | Platforms table | 发行方、TVL、链、7d/30d、DefiLlama / 官网链接、更新时间（Asia/Shanghai） |
 | Stablecoins | `stablecoincharts/all` 趋势、Top 稳定币、按链（高亮 ETH / SOL / TRON / Base / Arbitrum / **Robinhood Chain**）、RH Chain 历史 |
+| Launchpads `/launchpads` | RH（Pons、StonkBrokers、NOXA Fun）、Solana（pump.fun、LetsBonk、Bags）、BSC（four.meme、Flap.sh）的成交量 / 毛手续费 / 协议收入 / Top5 样本 |
+
+## Run locally / 本地运行
 
 ## Run locally / 本地运行
 
@@ -50,6 +53,21 @@ Server Route Handlers proxy and cache (`revalidate` 10 minutes). Client auto-ref
 
 Add an issuer by appending a slug + display name in `data/issuers.json`.
 
+**Launchpads** (see `/launchpads` and [`data/launchpads.json`](data/launchpads.json))
+
+- Fees: `https://api.llama.fi/summary/fees/{slug}?dataType=dailyFees` (gross) and `?dataType=dailyRevenue` (protocol keep)
+- Volume: `https://api.llama.fi/summary/dexs/{slug}`
+- Top-5 sample: GeckoTerminal `https://api.geckoterminal.com/api/v2/networks/{network}/dexes/{dex}/pools`
+- Dune boards are cited as **reference links only**. Live numbers do not come from Dune unless you later wire `DUNE_API_KEY`.
+
+Slugs used: `pons-v2`, `pons-v1`, `stonkbrokers`, `noxa-fun`, `pump.fun`, `bonk.fun-launchpad`, `bags`, `four.meme`, `flap-sh`.
+
+Optional env:
+
+```bash
+DUNE_API_KEY=   # unused by the live fetch path; dashboard links still render
+```
+
 ## Methodology caveats / 口径
 
 - **DefiLlama protocol TVL ≠ rwa.xyz issuer AUM.** Numbers will diverge. xStocks’ DefiLlama *RWA platform* On-chain AUM may also sit above the protocol endpoint used here for automation.
@@ -62,6 +80,6 @@ Add an issuer by appending a slug + display name in `data/issuers.json`.
 1. Import the repo in Vercel (Next.js preset).
 2. Build command: `npm run build`. Output: default `.next`.
 3. No environment variables required.
-4. Optional later: set `RWA_XYZ_API_KEY` — the MVP still will not call it until a client is wired.
+4. Optional later: `RWA_XYZ_API_KEY` (equity page, unused) or `DUNE_API_KEY` (launchpads still do not query Dune until a client is wired).
 
 Region: any. Refresh timezone labels are `Asia/Shanghai`.

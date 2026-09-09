@@ -51,7 +51,13 @@ export function DashboardShell({ initialData }: { initialData: DashboardPayload 
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-      <SiteHeader fetchedAt={data.fetchedAt} refreshing={refreshing} onRefresh={() => void refresh()} />
+      <SiteHeader
+        title="代币化美股 & 稳定币看板"
+        subtitle="追踪代币化美股协议 TVL 与稳定币发行。Robinhood Chain 夏天看股权代币 AUM，而不是发射台市值。"
+        fetchedAt={data.fetchedAt}
+        refreshing={refreshing}
+        onRefresh={() => void refresh()}
+      />
 
       {clientError || data.error ? (
         <div className="rounded-lg border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">

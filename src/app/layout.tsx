@@ -1,3 +1,4 @@
+import { AppNav } from "@/components/app-nav";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
 import { Geist_Mono, Noto_Sans_SC } from "next/font/google";
@@ -27,7 +28,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark">
       <body className={`${notoSans.className} ${geistMono.variable} min-h-screen antialiased`}>
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider>
+          <AppNav />
+          {children}
+        </TooltipProvider>
       </body>
     </html>
   );
