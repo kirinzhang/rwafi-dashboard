@@ -6,7 +6,15 @@ import { ChangePills } from "./change-pills";
 
 export function HeroKpis({ items }: { items: KpiBlock[] }) {
   return (
-    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <section
+      className={
+        items.length <= 2
+          ? "grid grid-cols-1 gap-3 sm:grid-cols-2"
+          : items.length === 3
+            ? "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            : "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5"
+      }
+    >
       {items.map((item) => (
         <Card key={item.key} className="border-white/5 bg-card/80 backdrop-blur">
           <CardHeader className="gap-2">

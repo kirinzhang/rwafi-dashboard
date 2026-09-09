@@ -52,6 +52,7 @@ export type ProtocolDetail = {
   category?: string;
   chains?: string[];
   tvl?: { date: number; totalLiquidityUSD: number }[];
+  tokensInUsd?: { date: number; tokens?: Record<string, number> }[];
   currentChainTvls?: Record<string, number>;
 };
 

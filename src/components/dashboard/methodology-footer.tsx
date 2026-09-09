@@ -1,12 +1,18 @@
 import { formatShanghai } from "@/lib/format";
-import type { DashboardPayload } from "@/lib/types";
+
+type Sources = {
+  endpoints: { name: string; url: string; noteZh: string }[];
+  rwaXyzConfigured: boolean;
+};
 
 export function MethodologyFooter({
   sources,
   fetchedAt,
+  variant,
 }: {
-  sources: DashboardPayload["sources"];
+  sources: Sources;
   fetchedAt: string;
+  variant: "equity" | "stables";
 }) {
   return (
     <footer className="space-y-3 border-t border-white/8 pt-8 pb-4 text-sm text-muted-foreground">
@@ -28,28 +34,59 @@ export function MethodologyFooter({
         ))}
       </ul>
       <div className="space-y-2 text-xs leading-relaxed">
-        <p>
-          <strong className="text-foreground/80">口径差异：</strong>
-          DefiLlama <em>protocol TVL</em> ≠ rwa.xyz 发行方 AUM。同一发行方（例如 Ondo Global Markets、xStocks /
-          Backed）两边数字会分叉：协议 TVL 统计适配器覆盖的链上仓位；rwa.xyz
-          可能纳入更多托管/发行账本。xStocks 的 DefiLlama RWA 平台页 On-chain AUM 也可能高于协议 endpoint。
-        </p>
-        <p>
-          <strong className="text-foreground/80">堆叠发行量图：</strong>
-          柱高 = 当日追踪发行方 DefiLlama 协议 TVL 之和。Top 10
-          按最新交易日市占一次性固定（全图同一图例）；其余为「其他」。缺测日记 0。Robinhood / Binance /
-          Reality / Backpack 无免费历史，不进入柱。
-        </p>
-        <p>
-          <strong className="text-foreground/80">不会编造的行：</strong>
-          Binance、Reality、Robinhood 股权账本、Backpack Securities
-          目前没有免费、可自动化的实时源，因此只出现在「推文快照」卡，并标明 2026-09-06 静态截图。
-        </p>
-        <p>
-          <strong className="text-foreground/80">Robinhood 代理指标：</strong>
-          Robinhood Chain DeFi TVL（chainId 4663）与 RH Chain
-          稳定币流通是链级上下文，<em>不是</em>代币化美股 AUM。
-        </p>
+        {variant === "equity" ? (
+          <>
+            <p>
+              <strong className="text-foreground/80">口径差异：</strong>
+              DefiLlama <em>protocol TVL</em> ≠ rwa.xyz 发行方 AUM。同一发行方（例如 Ondo Global Markets、xStocks /
+              Backed）两边数字会分叉：协议 TVL 统计适配器覆盖的链上仓位；rwa.xyz
+              可能纳入更多托管/发行账本。xStocks 的 DefiLlama RWA 平台页 On-chain AUM 也可能高于协议 endpoint。
+            </p>
+            <p>
+              <strong className="text-foreground/80">堆叠发行量 · 按发行方：</strong>
+              柱高 = 当日追踪发行方 DefiLlama 协议 TVL 之和。Top 10
+              按最新交易日市占一次性固定（全图同一图例）；其余为「其他」。缺测日记 0。Robinhood / Binance /
+              Reality / Backpack 无免费历史，不进入柱。
+            </p>
+            <p>
+              <strong className="text-foreground/80">堆叠发行量 · 按股票：</strong>
+              同一批发行方的 DefiLlama <code className="rounded bg-white/5 px-1">tokensInUsd[]</code>
+              ，把代币符号映射到 TradFi ticker 后加总。Ondo 去掉 <code className="rounded bg-white/5 px-1">ON</code>{" "}
+              后缀（AAPLON → AAPL），xStocks 去掉 <code className="rounded bg-white/5 px-1">X</code>，BackedFi
+              去掉前缀 <code className="rounded bg-white/5 px-1">B</code>。现金类（USD / USDT / USDC / USD+）与无法识别的符号、以及没有
+              tokensInUsd 的发行方/日期，计入「其他」。Top 10 按最新一日已映射市占锁定。
+              <em>不会</em>用发行方合计按比例编造个股序列。
+            </p>
+            <p>
+              <strong className="text-foreground/80">不会编造的行：</strong>
+              Binance、Reality、Robinhood 股权账本、Backpack Securities
+              目前没有免费、可自动化的实时源，因此只出现在「推文快照」卡，并标明 2026-09-06 静态截图。
+            </p>
+            <p>
+              <strong className="text-foreground/80">Robinhood 代理指标：</strong>
+              Robinhood Chain DeFi TVL（chainId 4663）是链级上下文，<em>不是</em>代币化美股 AUM。稳定币面板已独立到{" "}
+              <a href="/stablecoins" className="text-sky-300 hover:underline">
+                /stablecoins
+              </a>
+              。
+            </p>
+          </>
+        ) : (
+          <>
+            <p>
+              <strong className="text-foreground/80">稳定币口径：</strong>
+              美元稳定币流通取 DefiLlama peggedUSD。全球合计、Top 币种与按链拆分均来自 stablecoins.llama.fi，不是自编序列。
+            </p>
+            <p>
+              <strong className="text-foreground/80">Robinhood Chain：</strong>
+              链上稳定币流通是链级上下文，<em>不是</em>代币化美股 AUM。股权代币请看{" "}
+              <a href="/" className="text-sky-300 hover:underline">
+                美股代币
+              </a>
+              。
+            </p>
+          </>
+        )}
         <p>
           rwa.xyz API key 状态：{sources.rwaXyzConfigured ? "已配置（MVP 仍未调用）" : "未配置（默认）"}。环境变量{" "}
           <code className="rounded bg-white/5 px-1">RWA_XYZ_API_KEY</code> 仅为后续升级预留。

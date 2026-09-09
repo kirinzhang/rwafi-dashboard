@@ -1,6 +1,6 @@
 import type { SeriesPoint } from "./types";
 
-const DAY = 86_400;
+export const DAY = 86_400;
 
 export function pctChange(current: number | null, past: number | null): number | null {
   if (current == null || past == null) return null;
@@ -125,6 +125,7 @@ export function alignPlatformSeries(
 export function buildStackedIssuance(
   seriesList: NamedSeries[],
   topN = 10,
+  options?: { alwaysOther?: string[] },
 ): {
   series: {
     key: string;
@@ -135,15 +136,19 @@ export function buildStackedIssuance(
   }[];
   points: { date: number; total: number; values: Record<string, number> }[];
 } {
+  const alwaysOther = new Set(options?.alwaysOther ?? []);
   const withHistory = seriesList.filter((item) => item.points.some((p) => p.value > 0));
   const aligned = alignPlatformSeries(withHistory, "zero");
   if (!aligned.length) return { series: [], points: [] };
   const last = aligned[aligned.length - 1];
-  const ranked = [...withHistory]
+  const forced = withHistory.filter((item) => alwaysOther.has(item.slug));
+  const rankable = withHistory.filter((item) => !alwaysOther.has(item.slug));
+  const ranked = [...rankable]
     .map((item) => ({ ...item, latest: last.values[item.slug] ?? 0 }))
     .sort((a, b) => b.latest - a.latest);
   const top = ranked.slice(0, topN);
-  const rest = ranked.slice(topN);
+  const rest = [...ranked.slice(topN), ...forced];
+  const includeOther = rest.length > 0;
   const series = [
     ...top.map((item) => ({
       key: item.slug,
@@ -152,14 +157,14 @@ export function buildStackedIssuance(
       color: item.color,
       latestUsd: item.latest,
     })),
-    ...(rest.length
+    ...(includeOther
       ? [
           {
             key: OTHER_STACK_KEY,
             displayName: "其他",
             shortName: "其他",
             color: OTHER_STACK_COLOR,
-            latestUsd: rest.reduce((sum, item) => sum + item.latest, 0),
+            latestUsd: rest.reduce((sum, item) => sum + (last.values[item.slug] ?? 0), 0),
           },
         ]
       : []),
@@ -172,7 +177,7 @@ export function buildStackedIssuance(
       values[item.slug] = value;
       total += value;
     }
-    if (rest.length) {
+    if (includeOther) {
       const other = rest.reduce((sum, item) => sum + (row.values[item.slug] ?? 0), 0);
       values[OTHER_STACK_KEY] = other;
       total += other;

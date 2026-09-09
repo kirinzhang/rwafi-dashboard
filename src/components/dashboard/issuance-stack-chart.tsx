@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatShare, formatShanghaiDate, formatUsd } from "@/lib/format";
-import { weeklyLastSnapshot } from "@/lib/series";
+import { OTHER_STACK_KEY, weeklyLastSnapshot } from "@/lib/series";
 import type { StackedIssuanceHistory } from "@/lib/types";
 import { useMemo, useState } from "react";
 import {
@@ -25,10 +25,26 @@ const RANGES = [
 ] as const;
 
 type RangeKey = (typeof RANGES)[number]["key"];
+type Dimension = "issuer" | "stock";
 
-export function IssuanceStackChart({ history }: { history: StackedIssuanceHistory }) {
+const DIMENSIONS: { key: Dimension; label: string }[] = [
+  { key: "issuer", label: "按发行方" },
+  { key: "stock", label: "按股票" },
+];
+
+export function IssuanceStackChart({
+  issuerHistory,
+  tickerHistory,
+}: {
+  issuerHistory: StackedIssuanceHistory;
+  tickerHistory: StackedIssuanceHistory;
+}) {
   const [range, setRange] = useState<RangeKey>("90d");
+  const [dimension, setDimension] = useState<Dimension>("issuer");
+  const history = dimension === "issuer" ? issuerHistory : tickerHistory;
   const latestTotal = history.points.at(-1)?.total ?? null;
+  const hasMappedSeries = history.series.some((item) => item.key !== OTHER_STACK_KEY);
+  const showEmptyStock = dimension === "stock" && !hasMappedSeries;
 
   const data = useMemo(() => {
     const selected = RANGES.find((item) => item.key === range);
@@ -50,14 +66,29 @@ export function IssuanceStackChart({ history }: { history: StackedIssuanceHistor
     <Card className="border-white/5 bg-card/80">
       <CardHeader className="border-b border-white/5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0 space-y-2">
             <CardTitle>代币化美股发行量（堆叠）</CardTitle>
             <CardDescription>
               Y 轴 = {history.yAxisZh} · 不是 rwa.xyz 发行方 AUM · {history.rankingRuleZh}
             </CardDescription>
+            <div className="flex flex-wrap gap-1">
+              {DIMENSIONS.map((item) => (
+                <Button
+                  key={item.key}
+                  size="xs"
+                  variant={dimension === item.key ? "secondary" : "ghost"}
+                  onClick={() => setDimension(item.key)}
+                  aria-pressed={dimension === item.key}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-muted-foreground">最新合计</div>
+            <div className="text-xs text-muted-foreground">
+              {dimension === "issuer" ? "最新合计" : "最新已观测合计"}
+            </div>
             <div className="text-lg font-semibold tabular-nums">{formatUsd(latestTotal)}</div>
           </div>
         </div>
@@ -75,9 +106,16 @@ export function IssuanceStackChart({ history }: { history: StackedIssuanceHistor
             </Button>
           ))}
         </div>
-        {!history.series.length || !data.length ? (
+        {showEmptyStock ? (
+          <div className="flex h-80 items-center justify-center rounded-xl border border-white/8 bg-[#0b0f19] px-6 text-center text-sm text-muted-foreground">
+            暂无按股票拆分：当前 tokensInUsd 无法映射为 TradFi
+            ticker（如 USD+ / USDT），也没有用发行方合计编造个股序列。可切回「按发行方」。
+          </div>
+        ) : !history.series.length || !data.length ? (
           <div className="flex h-80 items-center justify-center rounded-xl border border-white/8 bg-[#0b0f19] text-sm text-muted-foreground">
-            暂无 DefiLlama 协议 TVL 日频序列。
+            {dimension === "issuer"
+              ? "暂无 DefiLlama 协议 TVL 日频序列。"
+              : "暂无 DefiLlama tokensInUsd 日频序列。"}
           </div>
         ) : (
           <div className="rounded-xl border border-white/8 bg-[#0b0f19] p-3">
@@ -159,12 +197,22 @@ export function IssuanceStackChart({ history }: { history: StackedIssuanceHistor
           </div>
         )}
         <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-          「发行量」在此页 = DefiLlama <code className="text-foreground/80">protocol.tvl[]</code>{" "}
-          的 <code className="text-foreground/80">totalLiquidityUSD</code>
-          ，用作代币化美股 AUM 代理，不是托管账本或 rwa.xyz 发行方 AUM。日期为各协议有观测的 UTC
-          日并集；某发行方当天无点记 0，不插值。图例按最新一日市占锁定，避免每日重排闪烁。
-          「全部」为每周最后一次观测的存量快照（不是周 TVL 加总），以免八百根日柱糊成面积图。
-          {history.missingLiveZh.length ? ` 未进柱：${history.missingLiveZh.join("；")}。` : null}
+          {dimension === "issuer" ? (
+            <>
+              「发行量」= DefiLlama <code className="text-foreground/80">protocol.tvl[]</code> 的{" "}
+              <code className="text-foreground/80">totalLiquidityUSD</code>
+              ，用作代币化美股 AUM 代理，不是托管账本或 rwa.xyz 发行方 AUM。日期为各协议有观测的 UTC
+              日并集；某发行方当天无点记 0，不插值。图例按最新一日市占锁定。
+            </>
+          ) : (
+            <>
+              「按股票」= 同一批发行方 DefiLlama <code className="text-foreground/80">tokensInUsd[]</code>{" "}
+              的代币 USD，映射到 TradFi ticker 后加总。数据源不是 rwa.xyz。无 ticker
+              拆分的发行方/日期进入「其他」，不会把发行方 TVL 按比例拆成 AAPL / TSLA。
+            </>
+          )}{" "}
+          「全部」为每周最后一次观测的存量快照（不是周加总）。
+          {history.missingLiveZh.length ? ` ${history.missingLiveZh.join("；")}。` : null}
         </p>
       </CardContent>
     </Card>

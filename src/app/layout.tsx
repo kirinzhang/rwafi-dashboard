@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Equity Token Radar · 代币化美股 & 稳定币看板",
+  title: "Equity Token Radar · 代币化美股看板",
   description:
-    "免费监控代币化美股协议 TVL 与稳定币发行。Robinhood Chain 夏天看股权代币 AUM，而不是 meme 发射台市值。",
+    "免费监控代币化美股协议 TVL、稳定币发行与发射台。Robinhood Chain 夏天看股权代币 AUM，而不是 meme 发射台市值。",
 };
 
 export default function RootLayout({

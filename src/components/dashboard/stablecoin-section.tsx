@@ -9,11 +9,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatUsd } from "@/lib/format";
-import type { DashboardPayload } from "@/lib/types";
+import type { StablesPayload } from "@/lib/types";
 import { ChangePills, ChangeText } from "./change-pills";
 import { TrendChart } from "./trend-chart";
 
-export function StablecoinSection({ data }: { data: DashboardPayload["stables"] }) {
+export function StablecoinSection({ data }: { data: StablesPayload["stables"] }) {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">

@@ -99,6 +99,29 @@ export type KpiBlock = {
   proxy?: boolean;
 };
 
+export type StablesPayload = {
+  ok: boolean;
+  error: string | null;
+  warnings: string[];
+  fetchedAt: string;
+  timezone: "Asia/Shanghai";
+  cacheSeconds: number;
+  kpis: {
+    globalStables: KpiBlock;
+    rhStables: KpiBlock;
+  };
+  stables: {
+    top: StablecoinRow[];
+    byChain: ChainStableRow[];
+    globalHistory: SeriesPoint[];
+    rhHistory: SeriesPoint[];
+  };
+  sources: {
+    endpoints: { name: string; url: string; noteZh: string }[];
+    rwaXyzConfigured: boolean;
+  };
+};
+
 export type DashboardPayload = {
   ok: boolean;
   error: string | null;
@@ -109,8 +132,6 @@ export type DashboardPayload = {
   kpis: {
     equityAum: KpiBlock;
     robinhoodEquity: KpiBlock;
-    globalStables: KpiBlock;
-    rhStables: KpiBlock;
     rhChainTvl: KpiBlock;
   };
   issuers: IssuerRow[];
@@ -120,13 +141,8 @@ export type DashboardPayload = {
   equityConcentrationEn: string;
   equityHistory: SeriesPoint[];
   equityIssuanceStack: StackedIssuanceHistory;
+  tickerIssuanceStack: StackedIssuanceHistory;
   tweetSnapshot: TweetSnapshot;
-  stables: {
-    top: StablecoinRow[];
-    byChain: ChainStableRow[];
-    globalHistory: SeriesPoint[];
-    rhHistory: SeriesPoint[];
-  };
   sources: {
     endpoints: { name: string; url: string; noteZh: string }[];
     rwaXyzConfigured: boolean;

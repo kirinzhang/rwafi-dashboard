@@ -1,19 +1,15 @@
 "use client";
 
-import type { DashboardPayload } from "@/lib/types";
+import type { StablesPayload } from "@/lib/types";
 import { useCallback, useEffect, useState } from "react";
 import { HeroKpis } from "./hero-kpis";
-import { IssuerShareCard } from "./issuer-share-card";
-import { IssuanceStackChart } from "./issuance-stack-chart";
 import { MethodologyFooter } from "./methodology-footer";
-import { PlatformsTable } from "./platforms-table";
 import { SiteHeader } from "./site-header";
-import { ThesisStrip } from "./thesis-strip";
-import { TweetSnapshotCard } from "./tweet-snapshot-card";
+import { StablecoinSection } from "./stablecoin-section";
 
 const REFRESH_MS = 5 * 60 * 1000;
 
-export function DashboardShell({ initialData }: { initialData: DashboardPayload }) {
+export function StablesShell({ initialData }: { initialData: StablesPayload }) {
   const [data, setData] = useState(initialData);
   const [refreshing, setRefreshing] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
@@ -21,9 +17,9 @@ export function DashboardShell({ initialData }: { initialData: DashboardPayload 
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const response = await fetch("/api/dashboard", { cache: "no-store" });
+      const response = await fetch("/api/stablecoins", { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const next = (await response.json()) as DashboardPayload;
+      const next = (await response.json()) as StablesPayload;
       setData(next);
       setClientError(next.error);
     } catch (error) {
@@ -40,13 +36,13 @@ export function DashboardShell({ initialData }: { initialData: DashboardPayload 
     return () => window.clearInterval(id);
   }, [refresh]);
 
-  const kpis = [data.kpis.equityAum, data.kpis.robinhoodEquity, data.kpis.rhChainTvl];
+  const kpis = [data.kpis.globalStables, data.kpis.rhStables];
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
       <SiteHeader
-        title="代币化美股看板"
-        subtitle="追踪代币化美股协议 TVL、发行方市占与按标的股票拆分。Robinhood Chain 夏天看股权代币 AUM，而不是发射台市值。"
+        title="稳定币看板"
+        subtitle="全球美元稳定币流通、按币种与按链拆分，含 Robinhood Chain。这是链上稳定币上下文，不是代币化美股 AUM。"
         fetchedAt={data.fetchedAt}
         refreshing={refreshing}
         onRefresh={() => void refresh()}
@@ -64,27 +60,9 @@ export function DashboardShell({ initialData }: { initialData: DashboardPayload 
         </div>
       ) : null}
 
-      <ThesisStrip />
       <HeroKpis items={kpis} />
-
-      <IssuanceStackChart
-        issuerHistory={data.equityIssuanceStack}
-        tickerHistory={data.tickerIssuanceStack}
-      />
-
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <IssuerShareCard
-          issuers={data.issuers}
-          totalUsd={data.equityTotalUsd}
-          hhi={data.equityHhi}
-          concentrationZh={data.equityConcentrationZh}
-          concentrationEn={data.equityConcentrationEn}
-        />
-        <TweetSnapshotCard snapshot={data.tweetSnapshot} />
-      </div>
-
-      <PlatformsTable issuers={data.issuers} />
-      <MethodologyFooter sources={data.sources} fetchedAt={data.fetchedAt} variant="equity" />
+      <StablecoinSection data={data.stables} />
+      <MethodologyFooter sources={data.sources} fetchedAt={data.fetchedAt} variant="stables" />
     </div>
   );
 }
