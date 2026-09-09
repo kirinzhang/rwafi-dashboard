@@ -243,8 +243,8 @@ function buildCard(
 
   let volumeNote: string | null = null;
   let volume: WindowMetric;
-  let volume24hUsd = volume24hFromLlama(pad.volumeSlugs, volumeSummaries);
-  let volume24hNoteZh: string | null = volume24hUsd != null
+  const volume24hUsd = volume24hFromLlama(pad.volumeSlugs, volumeSummaries);
+  const volume24hNoteZh: string | null = volume24hUsd != null
     ? `DefiLlama summary/dexs/${pad.volumeSlugs.join("+")} total24h。`
     : null;
   if (!pad.volumeSlugs.length) {
