@@ -5,8 +5,10 @@ import {
   GECKO_NETWORK,
   INITIAL_LP_USD,
   isQuoteAddress,
+  WETH_USDG_POOL,
   WINDOW_DAYS,
 } from "./rh-lp-constants";
+import { fetchPublicJson } from "./rh-lp-http";
 import {
   type DailyObs,
   parseFeeRate,
@@ -89,7 +91,7 @@ async function fetchGtOhlcv(
     `/ohlcv/day?aggregate=1&limit=1000&currency=usd&token=${token}`;
   const json = await settled(
     `geckoterminal ohlcv ${token}`,
-    llamaJson<GtOhlcv>(url, 25_000),
+    fetchPublicJson<GtOhlcv>(url, 25_000),
     warnings,
   );
   return parseGtRows(json?.data?.attributes?.ohlcv_list);
@@ -98,14 +100,15 @@ async function fetchGtOhlcv(
 async function fetchDexPaprikaOhlcv(
   pairAddress: string,
   warnings: string[],
+  label = "dexpaprika ohlcv",
 ): Promise<{ t: number; close: number; volume: number }[]> {
   const start = new Date(Date.now() - 100 * 86_400_000).toISOString().slice(0, 10);
   const url =
     `https://api.dexpaprika.com/networks/${DEXPAPRIKA_NETWORK}/pools/${addrKey(pairAddress)}` +
     `/ohlcv?start=${start}&interval=24h&limit=120`;
   const json = await settled(
-    "dexpaprika ohlcv",
-    llamaJson<DexPaprikaCandle[] | { error?: string }>(url, 25_000),
+    label,
+    fetchPublicJson<DexPaprikaCandle[] | { error?: string }>(url, 25_000),
     warnings,
   );
   if (!Array.isArray(json)) return [];
@@ -191,7 +194,7 @@ export async function getRhLpBacktest(
   );
   const pair = ds?.pairs?.[0];
   const gtUrl = `https://api.geckoterminal.com/api/v2/networks/${GECKO_NETWORK}/pools/${addrKey(addr)}?include=base_token,quote_token`;
-  const gt = await settled("geckoterminal pool", llamaJson<GtPoolDetail>(gtUrl, 20_000), warnings);
+  const gt = await settled("geckoterminal pool", fetchPublicJson<GtPoolDetail>(gtUrl, 20_000), warnings);
 
   const dsBase = addrKey(pair?.baseToken?.address);
   const dsQuote = addrKey(pair?.quoteToken?.address);
@@ -215,10 +218,12 @@ export async function getRhLpBacktest(
   const gtBaseIsStock = gtBaseAddr ? isQuoteAddress(gtBaseAddr) == null : dsQuoteIsQuote;
 
   const baseSeries = await fetchGtOhlcv(addr, "base", warnings);
+  await new Promise((r) => setTimeout(r, 400));
   const quoteSeries = await fetchGtOhlcv(addr, "quote", warnings);
   let source = "GeckoTerminal OHLCV day / currency=usd";
   let sourceUrl =
     `https://api.geckoterminal.com/api/v2/networks/${GECKO_NETWORK}/pools/${addrKey(addr)}/ohlcv/day`;
+  let paprikaFeesUntrusted = false;
 
   const quoteByDay = new Map(quoteSeries.map((r) => [r.t, r]));
   let merged: DailyObs[] = [];
@@ -249,6 +254,21 @@ export async function getRhLpBacktest(
         quoteUsd: 1,
         volumeUsd: row.volume,
       }));
+    } else if (paprika.length >= MIN_POINTS && quote === "WETH") {
+      const ethUsd = await fetchDexPaprikaOhlcv(WETH_USDG_POOL, warnings, "dexpaprika WETH/USDG ohlcv");
+      const ethByDay = new Map(ethUsd.map((r) => [r.t, r.close]));
+      const rows: DailyObs[] = [];
+      for (const row of paprika) {
+        const eth = ethByDay.get(row.t);
+        if (eth == null || !(eth > 0)) continue;
+        rows.push({ t: row.t, stockUsd: row.close, quoteUsd: eth, volumeUsd: 0 });
+      }
+      if (rows.length >= MIN_POINTS) {
+        merged = rows;
+        paprikaFeesUntrusted = true;
+        source = "DexPaprika 价格（股票池 + WETH/USDG）；成交量单位未与 USD 对齐，费用记 0";
+        sourceUrl = `https://api.dexpaprika.com/networks/${DEXPAPRIKA_NETWORK}/pools/${addrKey(addr)}/ohlcv`;
+      }
     }
   }
 
@@ -336,6 +356,9 @@ export async function getRhLpBacktest(
           : null,
         lastPartial ? "最后一根是当日未完结 K 线（UTC），成交量会偏小。" : null,
         quoteGaps > 0 ? `有 ${quoteGaps} 个交易日缺报价资产美元价，已跳过、不插值。` : null,
+        paprikaFeesUntrusted
+          ? "GeckoTerminal 日频量不可用；DexPaprika 该 WETH 池成交量单位无法确认为 USD，费用记 0，只回测价格路径上的 IL。"
+          : null,
       ]
         .filter(Boolean)
         .join(" ") || null,

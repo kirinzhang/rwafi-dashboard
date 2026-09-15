@@ -16,6 +16,7 @@ import {
   SEED_SYMBOLS,
   UNISWAP_POOL_BASE,
 } from "./rh-lp-constants";
+import { fetchPublicJson } from "./rh-lp-http";
 import { finite, grossFeeAprPct, parseFeeRate, positive } from "./rh-lp-math";
 import type {
   QuoteLeg,
@@ -168,13 +169,13 @@ async function fetchGtFees(
   const map = new Map<string, { feeTierPct: number | null; feeRate: number | null }>();
   const unique = [...new Set(pairAddresses.map(addrKey).filter(Boolean))];
   const chunks: string[][] = [];
-  for (let i = 0; i < unique.length; i += 20) chunks.push(unique.slice(i, i + 20));
+  for (let i = 0; i < unique.length; i += 15) chunks.push(unique.slice(i, i + 15));
 
-  await mapLimit(chunks, 2, async (chunk) => {
+  await mapLimit(chunks, 1, async (chunk) => {
     const url = `https://api.geckoterminal.com/api/v2/networks/${GECKO_NETWORK}/pools/multi/${chunk.join(",")}`;
     const json = await settled(
       `geckoterminal pools/multi (${chunk.length})`,
-      llamaJson<{ data?: { attributes?: GtPoolAttr }[] }>(url, 20_000),
+      fetchPublicJson<{ data?: { attributes?: GtPoolAttr }[] }>(url),
       warnings,
     );
     for (const row of json?.data ?? []) {
@@ -183,6 +184,21 @@ async function fetchGtFees(
       map.set(addrKey(attrs.address), parseFeeRate(attrs.pool_fee_percentage, attrs.name));
     }
   });
+
+  const missing = unique.filter((addr) => !map.has(addr));
+  if (missing.length) {
+    await mapLimit(missing, 2, async (address) => {
+      const url = `https://api.geckoterminal.com/api/v2/networks/${GECKO_NETWORK}/pools/${address}`;
+      const json = await settled(
+        `geckoterminal pool ${address.slice(0, 10)}`,
+        fetchPublicJson<{ data?: { attributes?: GtPoolAttr } }>(url),
+        warnings,
+      );
+      const attrs = json?.data?.attributes;
+      if (!attrs?.address) return;
+      map.set(addrKey(attrs.address), parseFeeRate(attrs.pool_fee_percentage, attrs.name));
+    });
+  }
   return map;
 }
 
@@ -315,11 +331,6 @@ export async function getRhLpData(): Promise<RhLpPayload> {
       }
     }
 
-    const fees = await fetchGtFees(
-      classified.map((c) => c.pair.pairAddress!).filter(Boolean),
-      warnings,
-    );
-
     const prices = new Map<string, RhOfficialPrice>();
     await mapLimit(seededAssets, 6, async (asset) => {
       const row = await fetchRhPrice(asset.symbol, warnings);
@@ -330,7 +341,6 @@ export async function getRhLpData(): Promise<RhLpPayload> {
       const pairAddress = pair.pairAddress!;
       const tvlUsd = positive(pair.liquidity?.usd);
       const volume24hUsd = finite(pair.volume?.h24);
-      const fee = fees.get(addrKey(pairAddress)) ?? parseFeeRate(null, null);
       const rhMid = officialPricesMid(prices.get(meta.stock.symbol));
       const priceUsd = meta.priceUsd;
       const premiumPct =
@@ -360,12 +370,12 @@ export async function getRhLpData(): Promise<RhLpPayload> {
         pairAddress,
         dexId: pair.dexId ?? "",
         dexLabel: dexLabel(pair.dexId, pair.labels),
-        feeTierPct: fee.feeTierPct,
-        feeRate: fee.feeRate,
+        feeTierPct: null,
+        feeRate: null,
         tvlUsd,
         volume24hUsd,
         volTvl,
-        grossFeeAprPct: grossFeeAprPct(volume24hUsd, fee.feeRate, tvlUsd),
+        grossFeeAprPct: null,
         priceUsd,
         priceNative: meta.priceNative,
         priceChange24hPct: finite(pair.priceChange?.h24),
@@ -382,6 +392,16 @@ export async function getRhLpData(): Promise<RhLpPayload> {
     });
 
     const pools = pickDeepest(allRows);
+    const fees = await fetchGtFees(
+      pools.map((p) => p.pairAddress),
+      warnings,
+    );
+    for (const pool of pools) {
+      const fee = fees.get(addrKey(pool.pairAddress)) ?? parseFeeRate(null, null);
+      pool.feeTierPct = fee.feeTierPct;
+      pool.feeRate = fee.feeRate;
+      pool.grossFeeAprPct = grossFeeAprPct(pool.volume24hUsd, fee.feeRate, pool.tvlUsd);
+    }
     const tvlSum = pools.reduce((s, p) => s + (p.tvlUsd ?? 0), 0);
     const volSum = pools.reduce((s, p) => s + (p.volume24hUsd ?? 0), 0);
     const deepest = pools[0];

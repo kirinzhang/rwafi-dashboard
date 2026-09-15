@@ -51,6 +51,7 @@ export const UNISWAP_POOL_BASE = "https://app.uniswap.org/explore/pools/robinhoo
 export const RH_ASSETS_URL = "https://api.robinhood.com/rhj/assets";
 export const RH_PRICES_URL = "https://api.robinhood.com/rhj/prices";
 export const RH_CONTRACTS_DOCS = "https://docs.robinhood.com/chain/contracts";
+export const WETH_USDG_POOL = "0x52e65B17fB6E5BA00Ed806f37Afcd2DaA50271Ca";
 
 export function addrKey(value: string | null | undefined): string {
   return (value ?? "").trim().toLowerCase();
