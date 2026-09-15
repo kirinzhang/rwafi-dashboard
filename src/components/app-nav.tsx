@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/", label: "美股代币", en: "Equities" },
   { href: "/stablecoins", label: "稳定币", en: "Stables" },
   { href: "/launchpads", label: "发射台", en: "Launchpads" },
+  { href: "/rh-lp", label: "RH LP", en: "Stock LP" },
 ] as const;
 
 function isActive(href: string, pathname: string): boolean {
